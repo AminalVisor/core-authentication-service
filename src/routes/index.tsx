@@ -1,30 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
+import Showcase from "@/pages/Showcase";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "cOreMS-Auth" },
-      { name: "description", content: "cOreMS-Auth — authentication service" },
-      { property: "og:title", content: "cOreMS-Auth" },
-      { property: "og:description", content: "cOreMS-Auth — authentication service" },
+      { title: "CoreMS Auth — Sign-in Test Harness" },
+      { name: "description", content: "Preview and test the shared CoreMS sign-in, entitlement and set-password screens across every suite app." },
+      { property: "og:title", content: "CoreMS Auth — Sign-in Test Harness" },
+      { property: "og:description", content: "Preview and test the shared CoreMS sign-in, entitlement and set-password screens across every suite app." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: Index,
+  component: Showcase,
 });
-
-function Index() {
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold tracking-tight text-foreground">
-          cOreMS-Auth
-        </h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Project scaffolded. Ready to build.
-        </p>
-      </div>
-    </div>
-  );
-}

@@ -1,8 +1,27 @@
 {
-  "name": "tanstack_start_ts",
+  "name": "@corems/auth",
+  "version": "0.1.0",
+  "description": "Shared authentication provider, screens and route guards for the CoreMS PWA suite.",
   "private": true,
   "sideEffects": false,
   "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "peerDependencies": {
+    "react": ">=19",
+    "react-dom": ">=19",
+    "@supabase/supabase-js": "^2.39.0"
+  },
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",
@@ -11,7 +30,9 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "build:lib": "vite build -c ./vite.lib.config.ts && tsc -p tsconfig.lib.json",
+    "prepare": "npm run build:lib"
   },
   "overrides": {
     "rolldown": "1.2.1"
@@ -73,6 +94,7 @@
   "devDependencies": {
     "@eslint/js": "^9.32.0",
     "@lovable.dev/vite-tanstack-config": "2.25.3",
+    "@supabase/supabase-js": "^2.117.3",
     "@testing-library/jest-dom": "^6.6.0",
     "@testing-library/react": "^16.0.0",
     "@types/node": "^22.16.5",

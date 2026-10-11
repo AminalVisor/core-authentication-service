@@ -1,24 +1,27 @@
-# Core Authentication Service
+# @corems/auth
 
-Just create a project named cOreMS-Auth for now.
+Shared sign-in for the CoreMS PWA suite: `CoreMSAuthProvider`, `LoginScreen`, `SetPasswordScreen`, `RequireAuth`, `RoleBasedRoute`.
 
-This project was built with [Lovable](https://lovable.dev).
-
-## Build with Lovable
-
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/9a9c38d2-b13a-4f52-a6ba-9bc9420e8052).
-
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
-
-## Development
-
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
-
-```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
-npm run dev
+## Install (from GitHub)
+```bash
+bun add github:<org>/<repo>#v0.1.0
 ```
+`prepare` runs `build:lib`, producing `dist/` (ESM + `.d.ts`). Styles are bundled — no CSS import needed.
+
+## Use
+```tsx
+import { CoreMSAuthProvider, RequireAuth, SetPasswordScreen } from "@corems/auth";
+
+<CoreMSAuthProvider supabaseClient={supabase} appKey="fuel" branding={{ subtitle: "Sign in to CoreFUEL." }}>
+  <RequireAuth>{/* app */}</RequireAuth>
+</CoreMSAuthProvider>
+
+// on /set-password and /reset-password:
+<SetPasswordScreen onBackToSignIn={() => navigate("/")} />
+```
+
+Gates on every login and session restore: `is_user_active(_user_id)` → `is_super_admin(_user_id)` (bypass) → `can_user_access_app(_app)`. Failures sign the user out and show a clear message on the login card.
+
+## Develop
+- `bun dev` — interactive harness (app switcher, scenario simulator, set/reset password demo).
+- `bun run build:lib` — build the package.
