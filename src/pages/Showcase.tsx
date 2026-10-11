@@ -39,10 +39,10 @@ function SignedInPanel() {
           </div>
         </div>
         <div className="cms-card-body cms-form">
-          <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
-            <dt className="text-harness-muted">Email</dt><dd>{user.email}</dd>
-            <dt className="text-harness-muted">Roles</dt><dd>{user.roles.join(", ")}</dd>
-            <dt className="text-harness-muted">Super Admin</dt><dd>{user.isSuperAdmin ? "Yes (entitlement bypassed)" : "No"}</dd>
+          <dl style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: "8px 16px", margin: 0, fontSize: 14 }}>
+            <dt style={{ color: "var(--cms-muted)" }}>Email</dt><dd>{user.email}</dd>
+            <dt style={{ color: "var(--cms-muted)" }}>Roles</dt><dd>{user.roles.join(", ")}</dd>
+            <dt style={{ color: "var(--cms-muted)" }}>Super Admin</dt><dd>{user.isSuperAdmin ? "Yes (entitlement bypassed)" : "No"}</dd>
           </dl>
           <RoleBasedRoute roles={["Admin"]} allowSuperAdmin fallback={<p className="cms-hint">RoleBasedRoute [Admin]: hidden for this user.</p>}>
             <p className="cms-hint" style={{ color: "var(--cms-ok)" }}>RoleBasedRoute [Admin]: visible.</p>
