@@ -10,3 +10,8 @@ export { AppMark, SUITE_LOGO_SRC } from "./ui";
 export { COREMS_APPS, APP_KEYS, getAppMeta } from "./apps";
 export { COREMS_AUTH_CSS, CoreMSStyles } from "./styles";
 export type * from "./types";
+// Aliases for consumer-facing names
+export { RoleBasedRoute as RequireRole } from "./guards";
+export { COREMS_APPS as APP_REGISTRY } from "./apps";
+export type { CoreMSAppMeta as AppMeta } from "./types";
+export type CoreMSProfile = Record<string, unknown>;

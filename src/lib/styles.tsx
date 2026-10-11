@@ -1,6 +1,6 @@
 /**
- * Self-contained styles for every CoreMS auth screen. Rendered through React 19's
- * <style href precedence> so it is hoisted into <head> once and deduplicated —
+ * Self-contained styles for every CoreMS auth screen. Injected into <head> once (by id),
+ * works on React 18 and 19 —
  * consumer apps need no Tailwind or CSS setup.
  */
 export const COREMS_AUTH_CSS = `
@@ -64,10 +64,15 @@ export const COREMS_AUTH_CSS = `
 @media (prefers-reduced-motion:reduce){.cms-spin{animation-duration:2s}.cms-btn,.cms-input{transition:none}}
 `;
 
+const STYLE_ID = "corems-auth-styles";
+
+/** React 18/19-safe: injects the stylesheet into <head> once (deduplicated by id). */
 export function CoreMSStyles() {
-  return (
-    <style href="corems-auth-styles" precedence="default">
-      {COREMS_AUTH_CSS}
-    </style>
-  );
+  if (typeof document !== "undefined" && !document.getElementById(STYLE_ID)) {
+    const el = document.createElement("style");
+    el.id = STYLE_ID;
+    el.textContent = COREMS_AUTH_CSS;
+    document.head.appendChild(el);
+  }
+  return null;
 }
