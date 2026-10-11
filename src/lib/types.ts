@@ -75,7 +75,7 @@ export type AnySupabaseClient = SupabaseClient<any, any, any>;
 export type ProfileLoader = (
   client: AnySupabaseClient,
   userId: string,
-) => Promise<{ username?: string; role?: string; roles?: string[]; profile?: Record<string, unknown> | null }>;
+) => Promise<{ username?: string | undefined; role?: string | undefined; roles?: string[] | undefined; profile?: Record<string, unknown> | null | undefined }>;
 
 export interface CoreMSAuthContextValue {
   appKey: AppKey;
