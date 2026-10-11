@@ -82,6 +82,11 @@
         "vite": "8.1.5",
         "vitest": "^4.1.10",
       },
+      "peerDependencies": {
+        "@supabase/supabase-js": "^2.39.0",
+        "react": ">=19",
+        "react-dom": ">=19",
+      },
     },
   },
   "overrides": {
