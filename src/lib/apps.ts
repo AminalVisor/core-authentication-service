@@ -4,7 +4,7 @@ import type { AppKey, CoreMSAppMeta } from "./types";
 export const COREMS_APPS: Record<AppKey, CoreMSAppMeta> = {
   ctrl: { key: "ctrl", name: "CoreCTRL", title: "CoreMS Control Centre", tagline: "Users, sites, assets and every app in the suite — centralised and secure.", accent: "#0F8A5F" },
   fuel: { key: "fuel", name: "CoreFUEL", title: "Fuel Manager", tagline: "Track every litre dispensed, reconciled and billed across your fleet.", accent: "#B45309" },
-  loading: { key: "loading", name: "CoreLOAD", title: "Load & Haul", tagline: "Live load counts, haul cycles and payload tracking from pit to plant.", accent: "#1D4ED8" },
+  loading: { key: "loading", name: "CoreLOAD", title: "Load Manager", tagline: "Live load counts, haul cycles and payload tracking from pit to plant.", accent: "#1D4ED8" },
   production: { key: "production", name: "CoreMINE", title: "Mine Production", tagline: "Shift production, targets and variances in one operational view.", accent: "#A16207" },
   process: { key: "process", name: "CorePRCS", title: "Plant Processing", tagline: "Throughput, recovery and plant uptime at a glance.", accent: "#0E7490" },
   mech: { key: "mech", name: "CoreMECH", title: "Maintenance", tagline: "Breakdowns, services and equipment availability under control.", accent: "#B91C1C" },
