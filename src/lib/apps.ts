@@ -10,7 +10,7 @@ export const COREMS_APPS: Record<AppKey, CoreMSAppMeta> = {
   mech: { key: "mech", name: "CoreMECH", title: "Maintenance and Fleetcare", tagline: "Breakdowns, services and equipment availability under control.", accent: "#B91C1C" },
   safety: { key: "safety", name: "CoreRISK", title: "Safety & Compliance", tagline: "Incidents, inspections and corrective actions — nothing missed.", accent: "#BE123C" },
   qc: { key: "qc", name: "CoreLABS", title: "Quality Control", tagline: "Sampling, assays and grade control with full traceability.", accent: "#4D7C0F" },
-  stock: { key: "stock", name: "CoreSTOR", title: "Stockpiles & Inventory", tagline: "Stockpile volumes, movements and inventory reconciled daily.", accent: "#6D28D9" },
+  stock: { key: "stock", name: "CoreSTOR", title: "Stores & Inventory", tagline: "Stockpile volumes, movements and inventory reconciled daily.", accent: "#6D28D9" },
   port: { key: "port", name: "CorePORT", title: "Destination Receiving", tagline: "Vessel loading, rail arrivals and port stock in sync.", accent: "#1E40AF" },
   dashboard: { key: "dashboard", name: "CoreVIEW", title: "Executive Dashboard", tagline: "Suite-wide KPIs for every site, in real time.", accent: "#475569" },
 };
