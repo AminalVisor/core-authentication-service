@@ -11,16 +11,17 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
     }
   },
   "files": [
     "dist"
   ],
   "peerDependencies": {
-    "react": ">=18",
-    "react-dom": ">=18",
-    "@supabase/supabase-js": "^2.39.0"
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0",
+    "@supabase/supabase-js": "^2.0.0"
   },
   "scripts": {
     "dev": "vite dev",
