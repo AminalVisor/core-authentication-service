@@ -7,77 +7,77 @@ var d = {
 		name: "CoreCTRL",
 		title: "CoreMS Control Centre",
 		tagline: "Users, sites, assets and every app in the suite — centralised and secure.",
-		accent: "#0F8A5F"
+		accent: "#00D2BE"
 	},
 	fuel: {
 		key: "fuel",
 		name: "CoreFUEL",
 		title: "Fuel Manager",
 		tagline: "Track every litre dispensed, reconciled and billed across your fleet.",
-		accent: "#B45309"
+		accent: "#F59E0B"
 	},
 	loading: {
 		key: "loading",
 		name: "CoreLOAD",
 		title: "Load Manager",
 		tagline: "Live load counts, haul cycles and payload tracking from pit to plant.",
-		accent: "#1D4ED8"
+		accent: "#F97316"
 	},
 	production: {
 		key: "production",
 		name: "CoreMINE",
 		title: "Mine Production",
 		tagline: "Shift production, targets and variances in one operational view.",
-		accent: "#A16207"
+		accent: "#38BDF8"
 	},
 	process: {
 		key: "process",
 		name: "CorePRCS",
 		title: "Processing & Production",
 		tagline: "Throughput, recovery and plant uptime at a glance.",
-		accent: "#0E7490"
+		accent: "#3B82F6"
 	},
 	mech: {
 		key: "mech",
 		name: "CoreMECH",
 		title: "Maintenance and Fleetcare",
 		tagline: "Breakdowns, services and equipment availability under control.",
-		accent: "#B91C1C"
+		accent: "#EAB308"
 	},
 	safety: {
 		key: "safety",
 		name: "CoreRISK",
 		title: "Safety & Compliance",
 		tagline: "Incidents, inspections and corrective actions — nothing missed.",
-		accent: "#BE123C"
+		accent: "#EF4444"
 	},
 	qc: {
 		key: "qc",
 		name: "CoreLABS",
 		title: "Quality Control",
 		tagline: "Sampling, assays and grade control with full traceability.",
-		accent: "#4D7C0F"
+		accent: "#22C55E"
 	},
 	stock: {
 		key: "stock",
 		name: "CoreSTOR",
 		title: "Stores & Inventory",
 		tagline: "Stockpile volumes, movements and inventory reconciled daily.",
-		accent: "#6D28D9"
+		accent: "#C47A3A"
 	},
 	port: {
 		key: "port",
 		name: "CorePORT",
 		title: "Destination Receiving",
 		tagline: "Vessel loading, rail arrivals and port stock in sync.",
-		accent: "#1E40AF"
+		accent: "#22D3EE"
 	},
 	dashboard: {
 		key: "dashboard",
 		name: "CoreVIEW",
 		title: "Executive Dashboard",
 		tagline: "Suite-wide KPIs for every site, in real time.",
-		accent: "#475569"
+		accent: "#A855F7"
 	}
 }, f = Object.keys(d);
 function p(e) {
