@@ -6,7 +6,7 @@ Shared sign-in for the CoreMS PWA suite: `CoreMSAuthProvider`, `LoginScreen`, `S
 ```bash
 bun add github:<org>/<repo>#v0.1.0
 ```
-`prepare` runs `build:lib`, producing `dist/` (ESM + `.d.ts`). Styles are bundled — no CSS import needed.
+`bun run build:lib` produces `dist/` (ESM + `.d.ts`), which is committed to the repo — installing from GitHub needs no build step. Styles are bundled — no CSS import needed.
 
 ## Use
 ```tsx
