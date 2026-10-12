@@ -2,6 +2,8 @@
 
 Shared sign-in for the CoreMS PWA suite: `CoreMSAuthProvider`, `LoginScreen`, `SetPasswordScreen`, `RequireAuth`, `RoleBasedRoute`.
 
+**Full setup, migration and release manual: [INTEGRATION.md](./INTEGRATION.md).**
+
 ## Install (from GitHub)
 ```bash
 bun add github:<org>/<repo>#v0.1.0
