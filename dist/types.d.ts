@@ -1,6 +1,6 @@
 import type { Session, SupabaseClient } from "@supabase/supabase-js";
 import type { ReactNode } from "react";
-export type AppKey = "ctrl" | "fuel" | "loading" | "production" | "process" | "mech" | "safety" | "qc" | "stock" | "port" | "dashboard";
+export type AppKey = "ctrl" | "fuel" | "shld" | "loading" | "production" | "process" | "mech" | "safety" | "qc" | "stock" | "port" | "dashboard";
 export interface CoreMSAppMeta {
     key: AppKey;
     /** Short product name, e.g. "CoreFUEL". */

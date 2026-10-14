@@ -16,6 +16,13 @@ var d = {
 		tagline: "Track every litre dispensed, reconciled and billed across your fleet.",
 		accent: "#F59E0B"
 	},
+	shld: {
+		key: "shld",
+		name: "CoreSHLD",
+		title: "Security Manager",
+		tagline: "Security operations. Controlled and connected.",
+		accent: "#EF4444"
+	},
 	loading: {
 		key: "loading",
 		name: "CoreLOAD",
