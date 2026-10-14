@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 export type AppKey =
   | "ctrl"
   | "fuel"
+  | "shld"
   | "loading"
   | "production"
   | "process"
@@ -55,13 +56,7 @@ export interface CoreMSUser {
 }
 
 export type AuthErrorCode =
-  | "invalid_credentials"
-  | "inactive"
-  | "entitlement_denied"
-  | "profile_error"
-  | "rate_limited"
-  | "network"
-  | "unknown";
+  "invalid_credentials" | "inactive" | "entitlement_denied" | "profile_error" | "rate_limited" | "network" | "unknown";
 
 export interface AuthResult {
   success: boolean;
@@ -75,7 +70,12 @@ export type AnySupabaseClient = SupabaseClient<any, any, any>;
 export type ProfileLoader = (
   client: AnySupabaseClient,
   userId: string,
-) => Promise<{ username?: string | undefined; role?: string | undefined; roles?: string[] | undefined; profile?: Record<string, unknown> | null | undefined }>;
+) => Promise<{
+  username?: string | undefined;
+  role?: string | undefined;
+  roles?: string[] | undefined;
+  profile?: Record<string, unknown> | null | undefined;
+}>;
 
 export interface CoreMSAuthContextValue {
   appKey: AppKey;
