@@ -1,5 +1,6 @@
 import { useEffect, useId, useState, type FormEvent } from "react";
-import { useCoreMSAuth } from "./CoreMSAuthProvider";
+import { resolveBranding, useOptionalCoreMSAuth } from "./CoreMSAuthProvider";
+import type { AnySupabaseClient, AppKey, CoreMSBranding } from "./types";
 import { Alert, AuthShell, CardHeader, EyeIcon, EyeOffIcon, Spinner } from "./ui";
 
 export interface SetPasswordScreenProps {
@@ -10,6 +11,12 @@ export interface SetPasswordScreenProps {
   onBackToSignIn?: () => void;
   minLength?: number;
   contained?: boolean;
+  /** Use when rendering outside <CoreMSAuthProvider>. */
+  supabaseClient?: AnySupabaseClient;
+  /** Branding overrides; falls back to the provider's branding. */
+  branding?: CoreMSBranding;
+  /** App key for standalone branding (defaults to the provider's, else "ctrl"). */
+  appKey?: AppKey;
 }
 
 type LinkState = "verifying" | "ready" | "invalid" | "done";
@@ -29,8 +36,16 @@ export function strength(pw: string) {
   return s;
 }
 
-export function SetPasswordScreen({ mode: modeProp, onComplete, onBackToSignIn, minLength = 8, contained }: SetPasswordScreenProps) {
-  const { supabase, branding, updatePassword } = useCoreMSAuth();
+export function SetPasswordScreen({ mode: modeProp, onComplete, onBackToSignIn, minLength = 8, contained, supabaseClient, branding: brandingProp, appKey }: SetPasswordScreenProps) {
+  const ctx = useOptionalCoreMSAuth();
+  const supabase = supabaseClient ?? ctx?.supabase;
+  if (!supabase) throw new Error("SetPasswordScreen needs a supabaseClient prop or a <CoreMSAuthProvider>");
+  const branding =
+    brandingProp || !ctx ? resolveBranding(appKey ?? ctx?.appKey ?? "ctrl", brandingProp) : ctx.branding;
+  const updatePassword = async (password: string) => {
+    const { error } = await supabase.auth.updateUser({ password });
+    return error ? { success: false, error: error.message } : { success: true as const, error: undefined };
+  };
   const ids = useId();
   const [mode, setMode] = useState<"set" | "reset">(modeProp ?? "set");
   const [state, setState] = useState<LinkState>("verifying");

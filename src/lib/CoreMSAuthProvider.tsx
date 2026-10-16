@@ -31,7 +31,7 @@ export interface CoreMSAuthProviderProps {
 
 export const defaultProfileLoader: ProfileLoader = async (client, userId) => {
   const [profileRes, rolesRes] = await Promise.all([
-    client.from("profiles").select("id, username, role").eq("id", userId).maybeSingle(),
+    client.from("profiles").select("id, username, full_name, role").eq("id", userId).maybeSingle(),
     client.rpc("get_user_roles", { _user_id: userId }),
   ]);
   if (profileRes.error) throw new Error(profileRes.error.message);
@@ -40,10 +40,23 @@ export const defaultProfileLoader: ProfileLoader = async (client, userId) => {
   return {
     profile,
     username: typeof profile?.["username"] === "string" ? (profile["username"] as string) : undefined,
+    fullName: typeof profile?.["full_name"] === "string" ? (profile["full_name"] as string) : undefined,
     role: typeof profile?.["role"] === "string" ? (profile["role"] as string) : undefined,
     roles,
   };
 };
+
+/** True while the user is on an invite / password-recovery link, where the session must survive the gates. */
+export function isPasswordSetupFlow(): boolean {
+  if (typeof window === "undefined") return false;
+  const { pathname, hash, search } = window.location;
+  return (
+    pathname.includes("set-password") ||
+    pathname.includes("reset-password") ||
+    /type=(recovery|invite)/.test(hash) ||
+    /type=(recovery|invite)/.test(search)
+  );
+}
 
 class GateError extends Error {
   constructor(public code: AuthErrorCode, message: string) {
@@ -111,7 +124,7 @@ export function CoreMSAuthProvider({
       const roles = Array.from(new Set([role, ...(prof.roles ?? [])])).filter(Boolean);
       if (roles.some((r) => superAdminRoles.includes(r))) isSuperAdmin = true;
 
-      if (!isSuperAdmin) {
+      if (!isSuperAdmin && !isPasswordSetupFlow()) {
         const access = await supabase.rpc("can_user_access_app", { _app: appKey });
         if (access.error || access.data !== true)
           throw new GateError(
@@ -123,6 +136,7 @@ export function CoreMSAuthProvider({
       return {
         id: uid,
         email: s.user.email ?? null,
+        fullName: prof.fullName,
         username: prof.username ?? s.user.email?.split("@")[0] ?? "User",
         role,
         roles,
@@ -150,6 +164,11 @@ export function CoreMSAuthProvider({
           inflight.current = null;
           const ge = e instanceof GateError ? e : new GateError("unknown", "Sign-in failed. Please try again.");
           fail(ge.code, ge.message);
+          // Keep invite/recovery sessions alive so the user can still set their password.
+          if (isPasswordSetupFlow()) {
+            if (mounted.current) setSession(s);
+            return;
+          }
           await supabase.auth.signOut();
           if (mounted.current) {
             setUser(null);
@@ -274,6 +293,11 @@ export function CoreMSAuthProvider({
       {children}
     </CoreMSAuthContext.Provider>
   );
+}
+
+/** Like useCoreMSAuth but returns undefined outside a provider. */
+export function useOptionalCoreMSAuth(): CoreMSAuthContextValue | undefined {
+  return useContext(CoreMSAuthContext);
 }
 
 export function useCoreMSAuth(): CoreMSAuthContextValue {

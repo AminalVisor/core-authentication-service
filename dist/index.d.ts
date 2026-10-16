@@ -1,4 +1,4 @@
-export { CoreMSAuthProvider, useCoreMSAuth, resolveBranding, defaultProfileLoader, DEFAULT_SUPER_ADMIN_ROLES } from "./CoreMSAuthProvider";
+export { CoreMSAuthProvider, useCoreMSAuth, useOptionalCoreMSAuth, isPasswordSetupFlow, resolveBranding, defaultProfileLoader, DEFAULT_SUPER_ADMIN_ROLES } from "./CoreMSAuthProvider";
 export type { CoreMSAuthProviderProps } from "./CoreMSAuthProvider";
 export { LoginScreen } from "./LoginScreen";
 export type { LoginScreenProps } from "./LoginScreen";
