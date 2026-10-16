@@ -12,6 +12,10 @@ export interface CoreMSAuthProviderProps {
     children: ReactNode;
 }
 export declare const defaultProfileLoader: ProfileLoader;
+/** True while the user is on an invite / password-recovery link, where the session must survive the gates. */
+export declare function isPasswordSetupFlow(): boolean;
 export declare function resolveBranding(appKey: AppKey, overrides?: CoreMSBranding): ResolvedBranding;
 export declare function CoreMSAuthProvider({ supabaseClient: supabase, appKey, branding: brandingOverrides, loadProfile, superAdminRoles, children, }: CoreMSAuthProviderProps): import("react").JSX.Element;
+/** Like useCoreMSAuth but returns undefined outside a provider. */
+export declare function useOptionalCoreMSAuth(): CoreMSAuthContextValue | undefined;
 export declare function useCoreMSAuth(): CoreMSAuthContextValue;

@@ -31,6 +31,7 @@ export interface CoreMSUser {
     id: string;
     email: string | null;
     username: string;
+    fullName?: string | undefined;
     role: string;
     roles: string[];
     isSuperAdmin: boolean;
@@ -46,6 +47,7 @@ export interface AuthResult {
 export type AnySupabaseClient = SupabaseClient<any, any, any>;
 export type ProfileLoader = (client: AnySupabaseClient, userId: string) => Promise<{
     username?: string | undefined;
+    fullName?: string | undefined;
     role?: string | undefined;
     roles?: string[] | undefined;
     profile?: Record<string, unknown> | null | undefined;

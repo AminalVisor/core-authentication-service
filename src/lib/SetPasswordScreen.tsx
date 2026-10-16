@@ -41,7 +41,7 @@ export function SetPasswordScreen({ mode: modeProp, onComplete, onBackToSignIn, 
   const supabase = supabaseClient ?? ctx?.supabase;
   if (!supabase) throw new Error("SetPasswordScreen needs a supabaseClient prop or a <CoreMSAuthProvider>");
   const branding =
-    brandingProp || !ctx ? resolveBranding(appKey ?? ctx?.appKey ?? "ctrl", { ...(ctx ? {} : {}), ...brandingProp }) : ctx.branding;
+    brandingProp || !ctx ? resolveBranding(appKey ?? ctx?.appKey ?? "ctrl", brandingProp) : ctx.branding;
   const updatePassword = async (password: string) => {
     const { error } = await supabase.auth.updateUser({ password });
     return error ? { success: false, error: error.message } : { success: true as const, error: undefined };
