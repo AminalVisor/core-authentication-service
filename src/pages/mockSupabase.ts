@@ -1,7 +1,7 @@
 import type { Session } from "@supabase/supabase-js";
 import type { AnySupabaseClient, AppKey } from "@/lib";
 
-export type Scenario = "success" | "inactive" | "entitlement" | "superadmin" | "invalid";
+export type Scenario = "success" | "inactive" | "company_inactive" | "company_error" | "entitlement" | "superadmin" | "invalid";
 
 export interface MockLogEntry {
   at: number;
@@ -45,6 +45,15 @@ export function createMockSupabase(opts: {
       case "is_user_active": {
         const v = scenario !== "inactive";
         log(`rpc is_user_active(${argStr})`, String(v), v ? "ok" : "error");
+        return { data: v, error: null };
+      }
+      case "is_company_active": {
+        if (scenario === "company_error") {
+          log(`rpc is_company_active(${argStr})`, "verification unavailable", "error");
+          return { data: null, error: { message: "Company verification unavailable" } };
+        }
+        const v = scenario !== "company_inactive";
+        log(`rpc is_company_active(${argStr})`, String(v), v ? "ok" : "error");
         return { data: v, error: null };
       }
       case "is_super_admin": {

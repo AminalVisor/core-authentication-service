@@ -16,6 +16,8 @@ import { createMockSupabase, type MockLogEntry, type Scenario } from "./mockSupa
 const SCENARIOS: { key: Scenario; label: string; hint: string }[] = [
   { key: "success", label: "Successful login", hint: "Active user with app entitlement." },
   { key: "inactive", label: "Inactive account", hint: "is_user_active returns false → auto sign-out." },
+  { key: "company_inactive", label: "Company suspended", hint: "Active account, inactive company → auto sign-out." },
+  { key: "company_error", label: "Company check unavailable", hint: "Company status cannot be verified → access blocked." },
   { key: "entitlement", label: "Entitlement denied", hint: "can_user_access_app returns false → auto sign-out." },
   { key: "superadmin", label: "Super Admin bypass", hint: "No entitlement, but is_super_admin skips the check." },
   { key: "invalid", label: "Wrong password", hint: "Supabase rejects credentials." },
@@ -68,7 +70,7 @@ export default function Showcase() {
     [scenario, appKey, view, runId, onLog],
   );
   const reset = () => { setLog([]); setRunId((n) => n + 1); };
-  const active = SCENARIOS.find((s) => s.key === scenario)!;
+  const active = SCENARIOS.find((s) => s.key === scenario);
 
   return (
     <div className="min-h-dvh bg-background text-foreground lg:grid lg:grid-cols-[340px_1fr]">
@@ -125,7 +127,7 @@ export default function Showcase() {
                 </label>
               ))}
             </div>
-            <p className="mt-2 text-xs text-muted-foreground">{active.hint} Use any email and password.</p>
+            <p className="mt-2 text-xs text-muted-foreground">{active?.hint} Use any email and password.</p>
           </section>
         )}
 

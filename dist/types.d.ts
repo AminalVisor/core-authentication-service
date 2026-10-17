@@ -38,7 +38,7 @@ export interface CoreMSUser {
     /** Raw profile row, if one was loaded. */
     profile?: Record<string, unknown> | null;
 }
-export type AuthErrorCode = "invalid_credentials" | "inactive" | "entitlement_denied" | "profile_error" | "rate_limited" | "network" | "unknown";
+export type AuthErrorCode = "invalid_credentials" | "inactive" | "company_inactive" | "entitlement_denied" | "profile_error" | "rate_limited" | "network" | "unknown";
 export interface AuthResult {
     success: boolean;
     error?: string;

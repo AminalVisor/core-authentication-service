@@ -57,7 +57,7 @@ export interface CoreMSUser {
 }
 
 export type AuthErrorCode =
-  "invalid_credentials" | "inactive" | "entitlement_denied" | "profile_error" | "rate_limited" | "network" | "unknown";
+  "invalid_credentials" | "inactive" | "company_inactive" | "entitlement_denied" | "profile_error" | "rate_limited" | "network" | "unknown";
 
 export interface AuthResult {
   success: boolean;

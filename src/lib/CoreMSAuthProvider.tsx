@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { getAppMeta } from "./apps";
 import type {
@@ -13,8 +13,7 @@ import type {
   ResolvedBranding,
 } from "./types";
 import { CoreMSStyles } from "./styles";
-
-const CoreMSAuthContext = createContext<CoreMSAuthContextValue | undefined>(undefined);
+import { CoreMSAuthContext } from "./auth-context";
 
 export const DEFAULT_SUPER_ADMIN_ROLES = ["Super Admin"];
 
@@ -102,13 +101,19 @@ export function CoreMSAuthProvider({
     setErrorCode(code);
   }, []);
 
-  /** Runs the suite gates for a session: active → super admin → entitlement → profile. */
+  /** Company suspension is independent of user activation and cannot be bypassed by roles. */
   const runGates = useCallback(
     async (s: Session): Promise<CoreMSUser> => {
       const uid = s.user.id;
+      const company = await supabase.rpc("is_company_active", { _user_id: uid });
+      if (company.error || (company.data !== true && company.data !== false))
+        throw new GateError("network", "We couldn't verify your company's status. Please try again.");
+      if (company.data !== true)
+        throw new GateError("company_inactive", "Your company's access has been temporarily suspended. Please contact your company administrator.");
+
       const active = await supabase.rpc("is_user_active", { _user_id: uid });
       if (active.error) throw new GateError("network", "We couldn't verify your account. Please try again.");
-      if (active.data === false)
+      if (active.data !== true)
         throw new GateError("inactive", "Your account has been deactivated. Please contact your administrator.");
 
       const sa = await supabase.rpc("is_super_admin", { _user_id: uid });
@@ -156,7 +161,8 @@ export function CoreMSAuthProvider({
         (u) => {
           if (!mounted.current) return;
           setSession(s);
-          setUser(u);
+          // Password links authorize password changes, not entry to the protected app.
+          setUser(isPasswordSetupFlow() ? null : u);
           setError(null);
           setErrorCode(null);
         },
@@ -166,7 +172,10 @@ export function CoreMSAuthProvider({
           fail(ge.code, ge.message);
           // Keep invite/recovery sessions alive so the user can still set their password.
           if (isPasswordSetupFlow()) {
-            if (mounted.current) setSession(s);
+            if (mounted.current) {
+              setUser(null);
+              setSession(s);
+            }
             return;
           }
           await supabase.auth.signOut();
@@ -190,13 +199,20 @@ export function CoreMSAuthProvider({
         setSession(null);
         return;
       }
-      if (event === "TOKEN_REFRESHED" || event === "USER_UPDATED") {
-        setSession(s);
-        return;
-      }
+      // Recheck company status on refreshed sessions instead of retaining stale authorization.
       // Defer so we never call Supabase inside the auth callback (avoids deadlocks).
       setTimeout(() => void hydrate(s).catch(() => undefined), 0);
     });
+    const revalidate = () => {
+      if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
+      inflight.current = null;
+      void supabase.auth.getSession().then(({ data }) => {
+        if (data.session) void hydrate(data.session).catch(() => undefined);
+      }).catch(() => undefined);
+    };
+    const timer = setInterval(revalidate, 60_000);
+    window.addEventListener("focus", revalidate);
+    document.addEventListener("visibilitychange", revalidate);
     supabase.auth
       .getSession()
       .then(async ({ data }) => {
@@ -205,6 +221,9 @@ export function CoreMSAuthProvider({
       .finally(() => mounted.current && setLoading(false));
     return () => {
       mounted.current = false;
+      clearInterval(timer);
+      window.removeEventListener("focus", revalidate);
+      document.removeEventListener("visibilitychange", revalidate);
       sub.subscription.unsubscribe();
     };
   }, [supabase, hydrate]);

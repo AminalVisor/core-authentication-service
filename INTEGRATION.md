@@ -8,12 +8,28 @@ Every app on the shared backend needs these Postgres RPCs. They run on every log
 
 | RPC | Returns | Purpose |
 | --- | --- | --- |
+| `is_company_active(_user_id uuid)` | `boolean` | Mandatory company gate; missing/inactive companies block all users, including Super Admins |
 | `is_user_active(_user_id uuid)` | `boolean` | Inactive accounts are blocked and signed out |
 | `is_super_admin(_user_id uuid)` | `boolean` | Super Admins bypass app entitlements |
 | `can_user_access_app(_app text)` | `boolean` | Is the user assigned this app key |
 | `get_user_roles(_user_id uuid)` | `text[]` | Roles (stored in a separate `user_roles` table, never on `profiles`) |
 
-Order: active → super admin (bypass) → entitlement → profile load. Any failure signs the user out with a clear message.
+Order: company active → user active → super admin → profile/roles → app entitlement (unless Super Admin). Company verification errors fail closed. Company suspension returns `company_inactive`, independently of individual user activation.
+
+Sessions are rechecked on token refresh, returning to the foreground and every 60 seconds while visible. This is UI revocation, not the security boundary: database policies and privileged endpoints must reject suspended-company data access on every request.
+
+### Company suspension rollout (required before updating consumer apps)
+
+The prepared SQL is in [database/company-suspension.sql](./database/company-suspension.sql). **It has not been applied**: this library has no connected shared backend. It was prepared using a read-only CoreCTRL schema snapshot; verify the live definitions before applying through the shared backend project's migration tools.
+
+1. Review the existing `company`, `profiles`, `clients`, `user_clients`, `client_apps`, `is_super_admin` and RLS definitions. The snapshot has `profiles.company_id → company.id` but no company active field.
+2. Apply the reviewed SQL to add `company.is_active` (existing companies default active), the dedicated company RPC, protected status updates, and company-aware legacy account/app RPCs. No individual `profiles.is_active` flags are changed. Only suite Super Admins or privileged server maintenance may change company status; existing company UPDATE RLS still applies.
+3. Add restrictive company/account-active policies alongside existing ownership/tenant policies on **every** tenant-data table and relevant storage policies. Audit SECURITY DEFINER RPCs and privileged server endpoints separately. The SQL deliberately leaves this inventory-specific step for the connected project rather than guessing unseen policies. Without it, already-issued sessions may still access data directly.
+4. Users without a profile/company assignment are denied, including Super Admins. Assign the suite administrators to an active operator company so they can reactivate suspended customers; do not assign them to the suspended company.
+5. Before releasing, test suspension and reactivation using real accounts and an already-issued session, including direct data requests. New libraries block sign-in if the new RPC is absent, so deploy the shared-backend changes **first**.
+6. Release a new library version/tag and upgrade each consumer. To suspend/reactivate, change the company's `is_active` only. Individually inactive or unentitled users remain blocked after reactivation.
+
+Invite/recovery sessions remain available for password changes but never grant protected-app access on password-setup pages. A successful password change signs the user out.
 
 ## 2. New app setup
 
@@ -56,7 +72,7 @@ Add the app's URLs (preview + production) to the Supabase Auth redirect allow-li
 | Before | After |
 | --- | --- |
 | `import { useAuth } from "@/contexts/AuthContext"` | `import { useCoreMSAuth } from "@corems/auth"` |
-| `const { user, signOut } = useAuth()` | `const { user, signOut } = useCoreMSAuth()` |
+| `const { user, signOut } = useAuth()` | `const { user, logout } = useCoreMSAuth()` |
 | `user.role` | `user?.role` / `user?.roles` / `user?.isSuperAdmin` |
 
 5. Replace custom route guards:
@@ -66,7 +82,7 @@ import { RequireRole } from "@corems/auth";
 ```
 Super Admins pass by default; set `allowSuperAdmin={false}` to exclude them.
 
-6. Test: valid login, inactive user, user without the app entitlement, Super Admin, invite link, reset link.
+6. Test: valid login, inactive user, no app entitlement, Super Admin entitlement bypass, inactive company (including a Super Admin), company-check failure, suspension during an existing session, reactivation, invite link, reset link and direct data access while suspended.
 
 ### Migration checklist
 - [ ] Package installed at the latest tag
@@ -75,7 +91,8 @@ Super Admins pass by default; set `allowSuperAdmin={false}` to exclude them.
 - [ ] Guards replaced with `RequireAuth` / `RequireRole`
 - [ ] Set/reset password route added, redirect URLs allow-listed
 - [ ] RPCs present and the app key assigned to test users
-- [ ] Six test scenarios above pass
+- [ ] Company suspension migration and restrictive data policies applied in the shared backend
+- [ ] All authorization scenarios above pass with real accounts, including direct data access
 
 ## 4. Reference
 

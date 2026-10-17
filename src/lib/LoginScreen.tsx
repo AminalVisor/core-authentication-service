@@ -19,6 +19,7 @@ export interface LoginScreenProps {
 const ERROR_TITLES: Partial<Record<AuthErrorCode, string>> = {
   invalid_credentials: "Sign-in failed",
   inactive: "Account deactivated",
+  company_inactive: "Company access suspended",
   entitlement_denied: "Access not enabled",
   rate_limited: "Too many attempts",
   profile_error: "Profile unavailable",
