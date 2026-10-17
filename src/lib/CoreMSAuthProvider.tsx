@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { getAppMeta } from "./apps";
 import type {
@@ -13,8 +13,7 @@ import type {
   ResolvedBranding,
 } from "./types";
 import { CoreMSStyles } from "./styles";
-
-const CoreMSAuthContext = createContext<CoreMSAuthContextValue | undefined>(undefined);
+import { CoreMSAuthContext } from "./auth-context";
 
 export const DEFAULT_SUPER_ADMIN_ROLES = ["Super Admin"];
 
