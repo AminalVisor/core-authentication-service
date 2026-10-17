@@ -142,29 +142,32 @@ function C({ supabaseClient: e, appKey: n, branding: i, loadProfile: c = y, supe
 	let [p, m] = s(null), [h, C] = s(null), [w, T] = s(!0), [E, D] = s(null), [O, k] = s(null), A = o(null), j = o(!0), M = a(() => S(n, i), [n, i]), N = t((e, t) => {
 		j.current && (D(t), k(e));
 	}, []), P = t(async (t) => {
-		let r = t.user.id, i = await e.rpc("is_user_active", { _user_id: r });
-		if (i.error) throw new x("network", "We couldn't verify your account. Please try again.");
-		if (i.data === !1) throw new x("inactive", "Your account has been deactivated. Please contact your administrator.");
-		let a = (await e.rpc("is_super_admin", { _user_id: r })).data === !0, o;
+		let r = t.user.id, i = await e.rpc("is_company_active", { _user_id: r });
+		if (i.error || i.data !== !0 && i.data !== !1) throw new x("network", "We couldn't verify your company's status. Please try again.");
+		if (i.data !== !0) throw new x("company_inactive", "Your company's access has been temporarily suspended. Please contact your company administrator.");
+		let a = await e.rpc("is_user_active", { _user_id: r });
+		if (a.error) throw new x("network", "We couldn't verify your account. Please try again.");
+		if (a.data !== !0) throw new x("inactive", "Your account has been deactivated. Please contact your administrator.");
+		let o = (await e.rpc("is_super_admin", { _user_id: r })).data === !0, s;
 		try {
-			o = await c(e, r);
+			s = await c(e, r);
 		} catch {
 			throw new x("profile_error", "We couldn't load your profile. Please contact support.");
 		}
-		let s = o.role ?? "User", l = Array.from(/* @__PURE__ */ new Set([s, ...o.roles ?? []])).filter(Boolean);
-		if (l.some((e) => d.includes(e)) && (a = !0), !a && !b()) {
+		let l = s.role ?? "User", u = Array.from(/* @__PURE__ */ new Set([l, ...s.roles ?? []])).filter(Boolean);
+		if (u.some((e) => d.includes(e)) && (o = !0), !o && !b()) {
 			let t = await e.rpc("can_user_access_app", { _app: n });
 			if (t.error || t.data !== !0) throw new x("entitlement_denied", `Your organisation doesn't have access to ${M.appName}. Please contact your administrator.`);
 		}
 		return {
 			id: r,
 			email: t.user.email ?? null,
-			fullName: o.fullName,
-			username: o.username ?? t.user.email?.split("@")[0] ?? "User",
-			role: s,
-			roles: l,
-			isSuperAdmin: a,
-			profile: o.profile ?? null
+			fullName: s.fullName,
+			username: s.username ?? t.user.email?.split("@")[0] ?? "User",
+			role: l,
+			roles: u,
+			isSuperAdmin: o,
+			profile: s.profile ?? null
 		};
 	}, [
 		e,
@@ -179,12 +182,12 @@ function C({ supabaseClient: e, appKey: n, branding: i, loadProfile: c = y, supe
 			token: t.access_token,
 			promise: n
 		}, n.then((e) => {
-			j.current && (C(t), m(e), D(null), k(null));
+			j.current && (C(t), m(b() ? null : e), D(null), k(null));
 		}, async (n) => {
 			A.current = null;
 			let r = n instanceof x ? n : new x("unknown", "Sign-in failed. Please try again.");
 			if (N(r.code, r.message), b()) {
-				j.current && C(t);
+				j.current && (m(null), C(t));
 				return;
 			}
 			await e.auth.signOut(), j.current && (m(null), C(null));
@@ -201,16 +204,16 @@ function C({ supabaseClient: e, appKey: n, branding: i, loadProfile: c = y, supe
 				A.current = null, m(null), C(null);
 				return;
 			}
-			if (e === "TOKEN_REFRESHED" || e === "USER_UPDATED") {
-				C(t);
-				return;
-			}
 			setTimeout(() => void F(t).catch(() => void 0), 0);
-		});
-		return e.auth.getSession().then(async ({ data: e }) => {
+		}), n = () => {
+			typeof document < "u" && document.visibilityState === "hidden" || (A.current = null, e.auth.getSession().then(({ data: e }) => {
+				e.session && F(e.session).catch(() => void 0);
+			}).catch(() => void 0));
+		}, r = setInterval(n, 6e4);
+		return window.addEventListener("focus", n), document.addEventListener("visibilitychange", n), e.auth.getSession().then(async ({ data: e }) => {
 			e.session && await F(e.session).catch(() => void 0);
 		}).finally(() => j.current && T(!1)), () => {
-			j.current = !1, t.subscription.unsubscribe();
+			j.current = !1, clearInterval(r), window.removeEventListener("focus", n), document.removeEventListener("visibilitychange", n), t.subscription.unsubscribe();
 		};
 	}, [e, F]);
 	let I = t(async (t, n) => {
@@ -458,6 +461,7 @@ function L({ tone: e, title: t, children: n }) {
 var R = {
 	invalid_credentials: "Sign-in failed",
 	inactive: "Account deactivated",
+	company_inactive: "Company access suspended",
 	entitlement_denied: "Access not enabled",
 	rate_limited: "Too many attempts",
 	profile_error: "Profile unavailable"
