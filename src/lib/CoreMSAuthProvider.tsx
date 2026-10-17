@@ -106,16 +106,16 @@ export function CoreMSAuthProvider({
   const runGates = useCallback(
     async (s: Session): Promise<CoreMSUser> => {
       const uid = s.user.id;
-      const active = await supabase.rpc("is_user_active", { _user_id: uid });
-      if (active.error) throw new GateError("network", "We couldn't verify your account. Please try again.");
-      if (active.data !== true)
-        throw new GateError("inactive", "Your account has been deactivated. Please contact your administrator.");
-
       const company = await supabase.rpc("is_company_active", { _user_id: uid });
       if (company.error || (company.data !== true && company.data !== false))
         throw new GateError("network", "We couldn't verify your company's status. Please try again.");
       if (company.data !== true)
         throw new GateError("company_inactive", "Your company's access has been temporarily suspended. Please contact your company administrator.");
+
+      const active = await supabase.rpc("is_user_active", { _user_id: uid });
+      if (active.error) throw new GateError("network", "We couldn't verify your account. Please try again.");
+      if (active.data !== true)
+        throw new GateError("inactive", "Your account has been deactivated. Please contact your administrator.");
 
       const sa = await supabase.rpc("is_super_admin", { _user_id: uid });
       let isSuperAdmin = sa.data === true;
@@ -208,7 +208,7 @@ export function CoreMSAuthProvider({
       if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
       inflight.current = null;
       void supabase.auth.getSession().then(({ data }) => {
-        if (data.session) return hydrate(data.session).catch(() => undefined);
+        if (data.session) void hydrate(data.session).catch(() => undefined);
       }).catch(() => undefined);
     };
     const timer = setInterval(revalidate, 60_000);

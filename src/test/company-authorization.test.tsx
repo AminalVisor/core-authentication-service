@@ -3,10 +3,12 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { CoreMSAuthProvider, useCoreMSAuth, type CoreMSAuthContextValue } from "@/lib";
 import { createMockSupabase, type Scenario } from "@/pages/mockSupabase";
 
+vi.mock("@/lib/styles", () => ({ CoreMSStyles: () => null }));
 afterEach(() => { cleanup(); window.history.replaceState({}, "", "/"); });
 
 async function setup(scenario: Scenario = "success") {
   const client = createMockSupabase({ scenario, appKey: "fuel", latency: 0, onLog: () => {} });
+  const originalRpc = client.rpc.bind(client);
   const rpc = vi.spyOn(client, "rpc");
   const signOut = vi.spyOn(client.auth, "signOut");
   let context: CoreMSAuthContextValue | undefined;
@@ -19,7 +21,7 @@ async function setup(scenario: Scenario = "success") {
     await act(async () => { result = await current().login("member@example.com", "password"); });
     return result;
   };
-  return { client, rpc, signOut, current, login };
+  return { client, rpc, originalRpc, signOut, current, login };
 }
 
 describe("Company authorization", () => {
@@ -44,31 +46,42 @@ describe("Company authorization", () => {
   });
   it("fails closed on missing company status", async () => {
     const s = await setup();
-    const original = s.client.rpc.bind(s.client);
+    const original = s.originalRpc;
     s.rpc.mockImplementation((fn, args) => fn === "is_company_active"
-      ? Promise.resolve({ data: null, error: null }) as ReturnType<typeof original>
+      ? Promise.resolve({ data: null, error: null }) as unknown as ReturnType<typeof original>
       : original(fn, args));
     expect(await s.login()).toMatchObject({ success: false, code: "network" });
   });
   it("does not let Super Admin roles bypass company suspension", async () => {
     const s = await setup("superadmin");
-    const original = s.client.rpc.bind(s.client);
+    const original = s.originalRpc;
     s.rpc.mockImplementation((fn, args) => fn === "is_company_active"
-      ? Promise.resolve({ data: false, error: null }) as ReturnType<typeof original>
+      ? Promise.resolve({ data: false, error: null }) as unknown as ReturnType<typeof original>
       : original(fn, args));
     expect(await s.login()).toMatchObject({ success: false, code: "company_inactive" });
   });
-  it("reactivation restores eligibility without overriding individual inactivity", async () => {
+  it("an active company does not override individual inactivity", async () => {
     const s = await setup("inactive");
     expect(await s.login()).toMatchObject({ success: false, code: "inactive" });
-    expect(s.rpc).not.toHaveBeenCalledWith("is_company_active", expect.anything());
+    expect(s.current().isAuthenticated).toBe(false);
+  });
+  it("restores eligibility after company reactivation without changing user activation", async () => {
+    const s = await setup();
+    let companyActive = false;
+    s.rpc.mockImplementation((fn, args) => fn === "is_company_active"
+      ? Promise.resolve({ data: companyActive, error: null }) as unknown as ReturnType<typeof s.originalRpc>
+      : s.originalRpc(fn, args));
+    expect(await s.login()).toMatchObject({ success: false, code: "company_inactive" });
+    companyActive = true;
+    expect(await s.login()).toEqual({ success: true });
+    expect(s.current().isAuthenticated).toBe(true);
   });
   it("revokes an existing session on foreground revalidation after company suspension", async () => {
     const s = await setup();
     expect(await s.login()).toEqual({ success: true });
-    const original = s.client.rpc.bind(s.client);
+    const original = s.originalRpc;
     s.rpc.mockImplementation((fn, args) => fn === "is_company_active"
-      ? Promise.resolve({ data: false, error: null }) as ReturnType<typeof original>
+      ? Promise.resolve({ data: false, error: null }) as unknown as ReturnType<typeof original>
       : original(fn, args));
     act(() => window.dispatchEvent(new Event("focus")));
     await waitFor(() => expect(s.current().isAuthenticated).toBe(false));
