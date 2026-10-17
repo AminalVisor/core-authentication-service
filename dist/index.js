@@ -101,7 +101,7 @@ function g() {
 	return null;
 }
 //#endregion
-//#region src/lib/CoreMSAuthProvider.tsx
+//#region src/lib/auth-context.ts
 var _ = e(void 0), v = ["Super Admin"], y = async (e, t) => {
 	let [n, r] = await Promise.all([e.from("profiles").select("id, username, full_name, role").eq("id", t).maybeSingle(), e.rpc("get_user_roles", { _user_id: t })]);
 	if (n.error) throw Error(n.error.message);
