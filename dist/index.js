@@ -105,6 +105,7 @@ function g() {
 var _ = e(void 0), v = ["Super Admin"], y = async (e, t) => {
 	let [n, r] = await Promise.all([e.from("profiles").select("id, username, full_name, role").eq("id", t).maybeSingle(), e.rpc("get_user_roles", { _user_id: t })]);
 	if (n.error) throw n.error;
+	if (S(r.error)) throw r.error;
 	let i = n.data ?? null, a = Array.isArray(r.data) ? r.data : [];
 	return {
 		profile: i,
