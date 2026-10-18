@@ -17,3 +17,4 @@
 - `src/pages/` holds the harness; it talks to the library only through `@/lib` and uses an in-memory mock client, never a real backend.
 - Company authorization uses the required fail-closed `is_company_active(_user_id)` RPC before role bypasses; recheck sessions on refresh, foreground return and every minute because company state can change during a session. Data access must independently enforce the same check through backend RLS.
 - Keep React auth context identity in `src/lib/auth-context.ts`, separate from refreshable provider components, so live updates cannot disconnect guards from the provider.
+- Preserve previously verified same-user access only during transport failures, retry on reconnection, and keep initial authorization, malformed responses and explicit denials fail-closed so brief outages do not destroy sessions.
