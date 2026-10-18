@@ -33,7 +33,8 @@ export const defaultProfileLoader: ProfileLoader = async (client, userId) => {
     client.from("profiles").select("id, username, full_name, role").eq("id", userId).maybeSingle(),
     client.rpc("get_user_roles", { _user_id: userId }),
   ]);
-  if (profileRes.error) throw new Error(profileRes.error.message);
+  if (profileRes.error) throw profileRes.error;
+  if (isConnectionError(rolesRes.error)) throw rolesRes.error;
   const profile = (profileRes.data ?? null) as Record<string, unknown> | null;
   const roles = Array.isArray(rolesRes.data) ? (rolesRes.data as string[]) : [];
   return {
@@ -58,9 +59,17 @@ export function isPasswordSetupFlow(): boolean {
 }
 
 class GateError extends Error {
-  constructor(public code: AuthErrorCode, message: string) {
+  constructor(public code: AuthErrorCode, message: string, public retryable = false) {
     super(message);
   }
+}
+
+/** Only transport outages are retryable; missing status and authorization errors fail closed. */
+function isConnectionError(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false;
+  const value = error as { status?: number; message?: string };
+  return value.status === 0 || [502, 503, 504].includes(value.status ?? -1) ||
+    /failed to fetch|fetch failed|network\s*(error|request failed)|load failed|timed?\s*out|timeout|connection (reset|refused)/i.test(value.message ?? "");
 }
 
 export function resolveBranding(appKey: AppKey, overrides?: CoreMSBranding): ResolvedBranding {
@@ -92,6 +101,7 @@ export function CoreMSAuthProvider({
   const [errorCode, setErrorCode] = useState<AuthErrorCode | null>(null);
   const inflight = useRef<{ token: string; promise: Promise<CoreMSUser> } | null>(null);
   const mounted = useRef(true);
+  const verifiedUser = useRef<CoreMSUser | null>(null);
 
   const branding = useMemo(() => resolveBranding(appKey, brandingOverrides), [appKey, brandingOverrides]);
 
@@ -107,22 +117,25 @@ export function CoreMSAuthProvider({
       const uid = s.user.id;
       const company = await supabase.rpc("is_company_active", { _user_id: uid });
       if (company.error || (company.data !== true && company.data !== false))
-        throw new GateError("network", "We couldn't verify your company's status. Please try again.");
+        throw new GateError("network", "We couldn't verify your company's status. Please try again.", isConnectionError(company.error));
       if (company.data !== true)
         throw new GateError("company_inactive", "Your company's access has been temporarily suspended. Please contact your company administrator.");
 
       const active = await supabase.rpc("is_user_active", { _user_id: uid });
-      if (active.error) throw new GateError("network", "We couldn't verify your account. Please try again.");
+      if (active.error) throw new GateError("network", "We couldn't verify your account. Please try again.", isConnectionError(active.error));
       if (active.data !== true)
         throw new GateError("inactive", "Your account has been deactivated. Please contact your administrator.");
 
       const sa = await supabase.rpc("is_super_admin", { _user_id: uid });
+      if (isConnectionError(sa.error))
+        throw new GateError("network", "We couldn't verify your account. Please try again.", true);
       let isSuperAdmin = sa.data === true;
 
       let prof: Awaited<ReturnType<ProfileLoader>>;
       try {
         prof = await loadProfile(supabase, uid);
-      } catch {
+      } catch (e) {
+        if (isConnectionError(e)) throw new GateError("network", "We couldn't load your profile. Please try again.", true);
         throw new GateError("profile_error", "We couldn't load your profile. Please contact support.");
       }
       const role = prof.role ?? "User";
@@ -131,6 +144,8 @@ export function CoreMSAuthProvider({
 
       if (!isSuperAdmin && !isPasswordSetupFlow()) {
         const access = await supabase.rpc("can_user_access_app", { _app: appKey });
+        if (isConnectionError(access.error))
+          throw new GateError("network", "We couldn't verify your app access. Please try again.", true);
         if (access.error || access.data !== true)
           throw new GateError(
             "entitlement_denied",
@@ -155,18 +170,23 @@ export function CoreMSAuthProvider({
   const hydrate = useCallback(
     (s: Session): Promise<CoreMSUser> => {
       if (inflight.current?.token === s.access_token) return inflight.current.promise;
-      const promise = runGates(s);
+      const promise = runGates(s).catch((e: unknown) => {
+        if (isConnectionError(e)) throw new GateError("network", "Connection interrupted. Please try again.", true);
+        throw e;
+      });
       inflight.current = { token: s.access_token, promise };
       promise.then(
         (u) => {
-          if (!mounted.current) return;
+          if (!mounted.current || inflight.current?.promise !== promise) return;
           setSession(s);
           // Password links authorize password changes, not entry to the protected app.
-          setUser(isPasswordSetupFlow() ? null : u);
+          verifiedUser.current = isPasswordSetupFlow() ? null : u;
+          setUser(verifiedUser.current);
           setError(null);
           setErrorCode(null);
         },
         async (e: unknown) => {
+          if (!mounted.current || inflight.current?.promise !== promise) return;
           inflight.current = null;
           const ge = e instanceof GateError ? e : new GateError("unknown", "Sign-in failed. Please try again.");
           fail(ge.code, ge.message);
@@ -174,10 +194,18 @@ export function CoreMSAuthProvider({
           if (isPasswordSetupFlow()) {
             if (mounted.current) {
               setUser(null);
+              verifiedUser.current = null;
               setSession(s);
             }
             return;
           }
+          // Retain only previously verified access for the same identity during transport outages.
+          // Explicit denials, malformed responses and initial hydration still fail closed.
+          if (ge.retryable && verifiedUser.current?.id === s.user.id) {
+            setSession(s);
+            return;
+          }
+          verifiedUser.current = null;
           await supabase.auth.signOut();
           if (mounted.current) {
             setUser(null);
@@ -195,6 +223,7 @@ export function CoreMSAuthProvider({
     const { data: sub } = supabase.auth.onAuthStateChange((event, s) => {
       if (event === "SIGNED_OUT" || !s) {
         inflight.current = null;
+        verifiedUser.current = null;
         setUser(null);
         setSession(null);
         return;
@@ -212,6 +241,7 @@ export function CoreMSAuthProvider({
     };
     const timer = setInterval(revalidate, 60_000);
     window.addEventListener("focus", revalidate);
+    window.addEventListener("online", revalidate);
     document.addEventListener("visibilitychange", revalidate);
     supabase.auth
       .getSession()
@@ -223,6 +253,7 @@ export function CoreMSAuthProvider({
       mounted.current = false;
       clearInterval(timer);
       window.removeEventListener("focus", revalidate);
+      window.removeEventListener("online", revalidate);
       document.removeEventListener("visibilitychange", revalidate);
       sub.subscription.unsubscribe();
     };
@@ -251,6 +282,7 @@ export function CoreMSAuthProvider({
 
   const logout = useCallback(async () => {
     inflight.current = null;
+    verifiedUser.current = null;
     await supabase.auth.signOut();
     setUser(null);
     setSession(null);
