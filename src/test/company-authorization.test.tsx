@@ -31,7 +31,7 @@ async function setup(scenario: Scenario = "success") {
 }
 
 describe("Company authorization", () => {
-  it.each(["is_company_active", "is_user_active", "can_user_access_app"])("keeps a verified session during a temporary %s connection failure and retries", async (fn) => {
+  it.each(["is_company_active", "is_user_active", "is_super_admin", "get_user_roles", "can_user_access_app"])("keeps a verified session during a temporary %s connection failure and retries", async (fn) => {
     const s = await setup();
     await s.login();
     const user = s.current().user;
@@ -66,6 +66,27 @@ describe("Company authorization", () => {
     expect(await s.login()).toMatchObject({ success: false, code: "network" });
     await waitFor(() => expect(s.signOut).toHaveBeenCalled());
     expect(s.current().isAuthenticated).toBe(false);
+  });
+  it.each([ ["is_user_active", "inactive"], ["can_user_access_app", "entitlement_denied"] ])("still revokes verified access when %s explicitly denies access", async (fn, code) => {
+    const s = await setup();
+    await s.login();
+    s.rpc.mockImplementation((name, args) => name === fn
+      ? Promise.resolve({ data: false, error: null }) as unknown as ReturnType<typeof s.originalRpc>
+      : s.originalRpc(name, args));
+    act(() => window.dispatchEvent(new Event("focus")));
+    await waitFor(() => expect(s.current().isAuthenticated).toBe(false));
+    expect(s.current().errorCode).toBe(code);
+    expect(s.signOut).toHaveBeenCalled();
+  });
+  it("never retains verified access for a different identity during a connection failure", async () => {
+    const s = await setup();
+    await s.login();
+    const session = s.current().session;
+    if (!session) throw new Error("Missing verified session");
+    s.rpc.mockRejectedValue(new TypeError("Failed to fetch"));
+    act(() => s.notify("SIGNED_IN", { ...session, access_token: "different-user-token", user: { ...session.user, id: "different-user" } }));
+    await waitFor(() => expect(s.current().isAuthenticated).toBe(false));
+    expect(s.signOut).toHaveBeenCalled();
   });
   it("still fails closed if a verified user's company status is missing", async () => {
     const s = await setup();

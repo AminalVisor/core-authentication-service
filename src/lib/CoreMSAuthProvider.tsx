@@ -34,6 +34,7 @@ export const defaultProfileLoader: ProfileLoader = async (client, userId) => {
     client.rpc("get_user_roles", { _user_id: userId }),
   ]);
   if (profileRes.error) throw profileRes.error;
+  if (isConnectionError(rolesRes.error)) throw rolesRes.error;
   const profile = (profileRes.data ?? null) as Record<string, unknown> | null;
   const roles = Array.isArray(rolesRes.data) ? (rolesRes.data as string[]) : [];
   return {
