@@ -11,6 +11,12 @@ async function setup(scenario: Scenario = "success") {
   const originalRpc = client.rpc.bind(client);
   const rpc = vi.spyOn(client, "rpc");
   const signOut = vi.spyOn(client.auth, "signOut");
+  const subscribe = client.auth.onAuthStateChange.bind(client.auth);
+  let notify: Parameters<typeof client.auth.onAuthStateChange>[0] | undefined;
+  vi.spyOn(client.auth, "onAuthStateChange").mockImplementation((callback) => {
+    notify = callback;
+    return subscribe(callback);
+  });
   let context: CoreMSAuthContextValue | undefined;
   function Probe() { context = useCoreMSAuth(); return null; }
   render(<CoreMSAuthProvider supabaseClient={client} appKey="fuel"><Probe /></CoreMSAuthProvider>);
@@ -21,10 +27,70 @@ async function setup(scenario: Scenario = "success") {
     await act(async () => { result = await current().login("member@example.com", "password"); });
     return result;
   };
-  return { client, rpc, originalRpc, signOut, current, login };
+  return { client, rpc, originalRpc, signOut, current, login, notify: (...args: Parameters<NonNullable<typeof notify>>) => notify?.(...args) };
 }
 
 describe("Company authorization", () => {
+  it.each(["is_company_active", "is_user_active", "can_user_access_app"])("keeps a verified session during a temporary %s connection failure and retries", async (fn) => {
+    const s = await setup();
+    await s.login();
+    const user = s.current().user;
+    s.rpc.mockImplementation((name, args) => name === fn
+      ? Promise.resolve({ data: null, error: { message: "TypeError: Failed to fetch", status: 0 } }) as unknown as ReturnType<typeof s.originalRpc>
+      : s.originalRpc(name, args));
+    act(() => window.dispatchEvent(new Event("focus")));
+    await waitFor(() => expect(s.current().errorCode).toBe("network"));
+    expect(s.current().user).toBe(user);
+    expect(s.current().session).not.toBeNull();
+    expect(s.signOut).not.toHaveBeenCalled();
+    s.rpc.mockImplementation(s.originalRpc);
+    act(() => window.dispatchEvent(new Event("online")));
+    await waitFor(() => expect(s.current().errorCode).toBeNull());
+    expect(s.current().isAuthenticated).toBe(true);
+  });
+  it("keeps the refreshed token when a verified user's recheck loses connection", async () => {
+    const s = await setup();
+    await s.login();
+    const session = s.current().session;
+    if (!session) throw new Error("Missing verified session");
+    s.rpc.mockRejectedValue(new TypeError("Failed to fetch"));
+    act(() => s.notify("TOKEN_REFRESHED", { ...session, access_token: "refreshed-token" }));
+    await waitFor(() => expect(s.current().errorCode).toBe("network"));
+    expect(s.current().session?.access_token).toBe("refreshed-token");
+    expect(s.current().isAuthenticated).toBe(true);
+    expect(s.signOut).not.toHaveBeenCalled();
+  });
+  it("does not grant initial access during a connection failure", async () => {
+    const s = await setup();
+    s.rpc.mockRejectedValue(new TypeError("Failed to fetch"));
+    expect(await s.login()).toMatchObject({ success: false, code: "network" });
+    await waitFor(() => expect(s.signOut).toHaveBeenCalled());
+    expect(s.current().isAuthenticated).toBe(false);
+  });
+  it("still fails closed if a verified user's company status is missing", async () => {
+    const s = await setup();
+    await s.login();
+    s.rpc.mockImplementation((fn, args) => fn === "is_company_active"
+      ? Promise.resolve({ data: null, error: null }) as unknown as ReturnType<typeof s.originalRpc>
+      : s.originalRpc(fn, args));
+    act(() => window.dispatchEvent(new Event("focus")));
+    await waitFor(() => expect(s.current().isAuthenticated).toBe(false));
+    expect(s.signOut).toHaveBeenCalled();
+  });
+  it("revokes company suspension on the next successful check after a connection failure", async () => {
+    const s = await setup();
+    await s.login();
+    s.rpc.mockRejectedValue(new TypeError("Failed to fetch"));
+    act(() => window.dispatchEvent(new Event("focus")));
+    await waitFor(() => expect(s.current().errorCode).toBe("network"));
+    s.rpc.mockImplementation((fn, args) => fn === "is_company_active"
+      ? Promise.resolve({ data: false, error: null }) as unknown as ReturnType<typeof s.originalRpc>
+      : s.originalRpc(fn, args));
+    act(() => window.dispatchEvent(new Event("online")));
+    await waitFor(() => expect(s.current().isAuthenticated).toBe(false));
+    expect(s.current().errorCode).toBe("company_inactive");
+    expect(s.signOut).toHaveBeenCalled();
+  });
   it("allows an active user at an active company with app entitlement", async () => {
     const s = await setup();
     expect(await s.login()).toEqual({ success: true });
