@@ -15,3 +15,4 @@ export { RoleBasedRoute as RequireRole } from "./guards";
 export { COREMS_APPS as APP_REGISTRY } from "./apps";
 export type { CoreMSAppMeta as AppMeta } from "./types";
 export type CoreMSProfile = Record<string, unknown>;
+export { COREMS_AUTH_VERSION, reportTelemetry, buildTelemetryPayload, getDeviceId } from "./telemetry";

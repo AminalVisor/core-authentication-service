@@ -14,6 +14,7 @@ import type {
 } from "./types";
 import { CoreMSStyles } from "./styles";
 import { CoreMSAuthContext } from "./auth-context";
+import { reportTelemetry } from "./telemetry";
 
 export const DEFAULT_SUPER_ADMIN_ROLES = ["Super Admin"];
 
@@ -21,6 +22,12 @@ export interface CoreMSAuthProviderProps {
   supabaseClient: AnySupabaseClient;
   appKey: AppKey;
   branding?: CoreMSBranding;
+  /** Consuming app build/release version, reported to telemetry. */
+  appVersion?: string;
+  /** Active service worker version / cache tag. */
+  swVersion?: string;
+  /** Offline IndexedDB schema version. */
+  offlineSchemaVersion?: number;
   /** Override how the profile/roles are loaded. Defaults to `profiles` table + `get_user_roles` RPC. */
   loadProfile?: ProfileLoader;
   /** Role names treated as Super Admin (in addition to the `is_super_admin` RPC). */
@@ -90,6 +97,9 @@ export function CoreMSAuthProvider({
   supabaseClient: supabase,
   appKey,
   branding: brandingOverrides,
+  appVersion,
+  swVersion,
+  offlineSchemaVersion,
   loadProfile = defaultProfileLoader,
   superAdminRoles = DEFAULT_SUPER_ADMIN_ROLES,
   children,
@@ -102,6 +112,7 @@ export function CoreMSAuthProvider({
   const inflight = useRef<{ token: string; promise: Promise<CoreMSUser> } | null>(null);
   const mounted = useRef(true);
   const verifiedUser = useRef<CoreMSUser | null>(null);
+  const telemetrySent = useRef<string | null>(null);
 
   const branding = useMemo(() => resolveBranding(appKey, brandingOverrides), [appKey, brandingOverrides]);
 
@@ -182,6 +193,10 @@ export function CoreMSAuthProvider({
           // Password links authorize password changes, not entry to the protected app.
           verifiedUser.current = isPasswordSetupFlow() ? null : u;
           setUser(verifiedUser.current);
+          if (verifiedUser.current && telemetrySent.current !== u.id) {
+            telemetrySent.current = u.id;
+            void reportTelemetry(supabase, { appKey, appVersion, swVersion, offlineSchemaVersion });
+          }
           setError(null);
           setErrorCode(null);
         },
@@ -215,7 +230,7 @@ export function CoreMSAuthProvider({
       );
       return promise;
     },
-    [runGates, fail, supabase],
+    [runGates, fail, supabase, appKey, appVersion, swVersion, offlineSchemaVersion],
   );
 
   useEffect(() => {
