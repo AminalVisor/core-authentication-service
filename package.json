@@ -1,6 +1,6 @@
 {
   "name": "@corems/auth",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Shared authentication provider, screens and route guards for the CoreMS PWA suite.",
   "private": true,
   "sideEffects": false,
