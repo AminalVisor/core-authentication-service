@@ -147,3 +147,10 @@ Access extra fields via `useCoreMSAuth().user?.profile`.
    then redeploy.
 
 Versioning: patch (`0.1.x`) for fixes, minor (`0.x.0`) for new features, major for breaking changes. Upgrade apps one at a time.
+
+## Version telemetry (v0.2.0+)
+After each successful sign-in or session restore (once per user per page load), the provider calls `record_app_telemetry` with the app key, `COREMS_AUTH_VERSION`, service-worker state, browser info and an anonymous device id (`localStorage.corems_device_id`). Failures are ignored and never affect sign-in. Pass optional details:
+```tsx
+<CoreMSAuthProvider supabaseClient={supabase} appKey="fuel"
+  appVersion={import.meta.env.VITE_APP_VERSION} swVersion="sw-2026-10" offlineSchemaVersion={3}>
+```
