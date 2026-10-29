@@ -11,6 +11,7 @@ export interface CoreMSAppMeta {
     tagline: string;
     /** Accent colour (hex). Must keep >= 4.5:1 contrast with white text. */
     accent: string;
+    logo?: string;
 }
 export interface CoreMSBranding {
     appName?: string;
