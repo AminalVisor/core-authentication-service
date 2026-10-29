@@ -8,6 +8,7 @@ var d = {
 		title: "CoreMS Control Centre",
 		tagline: "Users, sites, assets and every app in the suite — centralised and secure.",
 		accent: "#00D2BE"
+        logo: 'CoreCTRL-tpt 256x256',
 	},
 	fuel: {
 		key: "fuel",
