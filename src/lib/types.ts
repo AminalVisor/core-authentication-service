@@ -25,6 +25,7 @@ export interface CoreMSAppMeta {
   tagline: string;
   /** Accent colour (hex). Must keep >= 4.5:1 contrast with white text. */
   accent: string;
+  logo?: string;
 }
 
 export interface CoreMSBranding {
@@ -57,7 +58,14 @@ export interface CoreMSUser {
 }
 
 export type AuthErrorCode =
-  "invalid_credentials" | "inactive" | "company_inactive" | "entitlement_denied" | "profile_error" | "rate_limited" | "network" | "unknown";
+  | "invalid_credentials"
+  | "inactive"
+  | "company_inactive"
+  | "entitlement_denied"
+  | "profile_error"
+  | "rate_limited"
+  | "network"
+  | "unknown";
 
 export interface AuthResult {
   success: boolean;
