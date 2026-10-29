@@ -66,7 +66,11 @@ export function isPasswordSetupFlow(): boolean {
 }
 
 class GateError extends Error {
-  constructor(public code: AuthErrorCode, message: string, public retryable = false) {
+  constructor(
+    public code: AuthErrorCode,
+    message: string,
+    public retryable = false,
+  ) {
     super(message);
   }
 }
@@ -75,8 +79,13 @@ class GateError extends Error {
 function isConnectionError(error: unknown): boolean {
   if (!error || typeof error !== "object") return false;
   const value = error as { status?: number; message?: string };
-  return value.status === 0 || [502, 503, 504].includes(value.status ?? -1) ||
-    /failed to fetch|fetch failed|network\s*(error|request failed)|load failed|timed?\s*out|timeout|connection (reset|refused)/i.test(value.message ?? "");
+  return (
+    value.status === 0 ||
+    [502, 503, 504].includes(value.status ?? -1) ||
+    /failed to fetch|fetch failed|network\s*(error|request failed)|load failed|timed?\s*out|timeout|connection (reset|refused)/i.test(
+      value.message ?? "",
+    )
+  );
 }
 
 export function resolveBranding(appKey: AppKey, overrides?: CoreMSBranding): ResolvedBranding {
@@ -88,7 +97,7 @@ export function resolveBranding(appKey: AppKey, overrides?: CoreMSBranding): Res
     subtitle: overrides?.subtitle ?? "Sign in to your workspace.",
     tagline: overrides?.tagline ?? meta.tagline,
     accent: overrides?.accent ?? meta.accent,
-    logo: overrides?.logo,
+    logo: overrides?.logo ?? meta.logo,
     hideSuiteLogo: overrides?.hideSuiteLogo ?? false,
   };
 }
@@ -128,12 +137,24 @@ export function CoreMSAuthProvider({
       const uid = s.user.id;
       const company = await supabase.rpc("is_company_active", { _user_id: uid });
       if (company.error || (company.data !== true && company.data !== false))
-        throw new GateError("network", "We couldn't verify your company's status. Please try again.", isConnectionError(company.error));
+        throw new GateError(
+          "network",
+          "We couldn't verify your company's status. Please try again.",
+          isConnectionError(company.error),
+        );
       if (company.data !== true)
-        throw new GateError("company_inactive", "Your company's access has been temporarily suspended. Please contact your company administrator.");
+        throw new GateError(
+          "company_inactive",
+          "Your company's access has been temporarily suspended. Please contact your company administrator.",
+        );
 
       const active = await supabase.rpc("is_user_active", { _user_id: uid });
-      if (active.error) throw new GateError("network", "We couldn't verify your account. Please try again.", isConnectionError(active.error));
+      if (active.error)
+        throw new GateError(
+          "network",
+          "We couldn't verify your account. Please try again.",
+          isConnectionError(active.error),
+        );
       if (active.data !== true)
         throw new GateError("inactive", "Your account has been deactivated. Please contact your administrator.");
 
@@ -146,7 +167,8 @@ export function CoreMSAuthProvider({
       try {
         prof = await loadProfile(supabase, uid);
       } catch (e) {
-        if (isConnectionError(e)) throw new GateError("network", "We couldn't load your profile. Please try again.", true);
+        if (isConnectionError(e))
+          throw new GateError("network", "We couldn't load your profile. Please try again.", true);
         throw new GateError("profile_error", "We couldn't load your profile. Please contact support.");
       }
       const role = prof.role ?? "User";
@@ -250,9 +272,12 @@ export function CoreMSAuthProvider({
     const revalidate = () => {
       if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
       inflight.current = null;
-      void supabase.auth.getSession().then(({ data }) => {
-        if (data.session) void hydrate(data.session).catch(() => undefined);
-      }).catch(() => undefined);
+      void supabase.auth
+        .getSession()
+        .then(({ data }) => {
+          if (data.session) void hydrate(data.session).catch(() => undefined);
+        })
+        .catch(() => undefined);
     };
     const timer = setInterval(revalidate, 60_000);
     window.addEventListener("focus", revalidate);
@@ -280,7 +305,9 @@ export function CoreMSAuthProvider({
       setErrorCode(null);
       const { data, error: err } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
       if (err || !data.session) {
-        const msg = /invalid/i.test(err?.message ?? "") ? "Incorrect email or password." : err?.message ?? "Sign-in failed.";
+        const msg = /invalid/i.test(err?.message ?? "")
+          ? "Incorrect email or password."
+          : (err?.message ?? "Sign-in failed.");
         fail("invalid_credentials", msg);
         return { success: false, error: msg, code: "invalid_credentials" };
       }
@@ -311,8 +338,12 @@ export function CoreMSAuthProvider({
 
   const requestPasswordReset = useCallback(
     async (email: string, redirectTo?: string): Promise<AuthResult> => {
-      const target = redirectTo ?? (typeof window !== "undefined" ? `${window.location.origin}/reset-password` : undefined);
-      const { error: err } = await supabase.auth.resetPasswordForEmail(email.trim(), target ? { redirectTo: target } : undefined);
+      const target =
+        redirectTo ?? (typeof window !== "undefined" ? `${window.location.origin}/reset-password` : undefined);
+      const { error: err } = await supabase.auth.resetPasswordForEmail(
+        email.trim(),
+        target ? { redirectTo: target } : undefined,
+      );
       return err ? { success: false, error: err.message, code: "unknown" } : { success: true };
     },
     [supabase],
@@ -350,7 +381,21 @@ export function CoreMSAuthProvider({
       requestPasswordReset,
       updatePassword,
     }),
-    [appKey, branding, supabase, user, session, loading, error, errorCode, login, logout, refreshUser, requestPasswordReset, updatePassword],
+    [
+      appKey,
+      branding,
+      supabase,
+      user,
+      session,
+      loading,
+      error,
+      errorCode,
+      login,
+      logout,
+      refreshUser,
+      requestPasswordReset,
+      updatePassword,
+    ],
   );
 
   return (
