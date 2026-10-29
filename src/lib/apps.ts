@@ -1,5 +1,5 @@
 import type { AppKey, CoreMSAppMeta } from "./types";
-import coreCtrlLogo from "./assets/CoreCTRL-tpt 256x256.png";
+import coreCtrlLogo from "./assets/CoreCTRL- Auth.png";
 
 /** Registry of every app in the CoreMS suite. Accents keep >= 4.5:1 contrast with white text. */
 export const COREMS_APPS: Record<AppKey, CoreMSAppMeta> = {
