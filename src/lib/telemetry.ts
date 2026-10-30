@@ -1,7 +1,7 @@
 import type { AnySupabaseClient, AppKey } from "./types";
 
 /** Current version of @corems/auth. Keep in sync with package.json. */
-export const COREMS_AUTH_VERSION = "0.2.1";
+export const COREMS_AUTH_VERSION = "0.2.2";
 
 const DEVICE_KEY = "corems_device_id";
 
