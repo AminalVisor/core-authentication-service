@@ -1,6 +1,6 @@
 import type { AnySupabaseClient, AppKey } from "./types";
 /** Current version of @corems/auth. Keep in sync with package.json. */
-export declare const COREMS_AUTH_VERSION = "0.2.1";
+export declare const COREMS_AUTH_VERSION = "0.2.2";
 export declare function getDeviceId(): string | undefined;
 export declare function detectSupabaseJsVersion(client: AnySupabaseClient): string;
 export interface TelemetryOptions {

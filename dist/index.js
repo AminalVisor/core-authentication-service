@@ -104,7 +104,7 @@ function g() {
 }
 //#endregion
 //#region src/lib/auth-context.ts
-var _ = e(void 0), v = "0.2.1", y = "corems_device_id";
+var _ = e(void 0), v = "0.2.2", y = "corems_device_id";
 function b() {
 	try {
 		if (typeof localStorage > "u") return;
