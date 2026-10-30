@@ -1,5 +1,7 @@
 import type { AppKey, CoreMSAppMeta } from "./types";
-import coreCtrlLogo from "./assets/CoreCTRL- Auth.png";
+import coreCtrlLogo from "./assets/CoreCTRL-Auth.png";
+import coreFUELLogo from "./assets/CoreFUEL-Auth.png";
+import coreLOADLogo from "./assets/CoreLOAD-Auth.png";
 
 /** Registry of every app in the CoreMS suite. Accents keep >= 4.5:1 contrast with white text. */
 export const COREMS_APPS: Record<AppKey, CoreMSAppMeta> = {
@@ -17,6 +19,7 @@ export const COREMS_APPS: Record<AppKey, CoreMSAppMeta> = {
     title: "Fuel Manager",
     tagline: "Track every litre dispensed, reconciled and billed across your fleet.",
     accent: "#F59E0B",
+    logo: coreFUELLogo,
   },
   shld: {
     key: "shld",
@@ -31,6 +34,7 @@ export const COREMS_APPS: Record<AppKey, CoreMSAppMeta> = {
     title: "Load Manager",
     tagline: "Live load counts, haul cycles and payload tracking from pit to plant.",
     accent: "#F97316",
+    logo: coreLOADLogo,
   },
   production: {
     key: "production",
