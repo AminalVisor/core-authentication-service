@@ -2,6 +2,17 @@ import type { AppKey, CoreMSAppMeta } from "./types";
 import coreCtrlLogo from "./assets/CoreCTRL-Auth.png";
 import coreFUELLogo from "./assets/CoreFUEL-Auth.png";
 import coreLOADLogo from "./assets/CoreLOAD-Auth.png";
+import coreBLSTLogo from "./assets/CoreBLST-Auth.png";
+import coreSHLDLogo from "./assets/CoreSHLD-Auth.png";
+import corePORTLogo from "./assets/CorePORT-Auth.png";
+import coreLABSLogo from "./assets/CoreLABS-Auth.png";
+import coreFILLLogo from "./assets/CoreFILL-Auth.png";
+import corePRCSLogo from "./assets/CorePRCS-Auth.png";
+import coreMINELogo from "./assets/CoreMINE-Auth.png";
+import coreMECHLogo from "./assets/CoreMECH-Auth.png";
+import coreSTORLogo from "./assets/CoreSTOR-Auth.png";
+import coreVIEWLogo from "./assets/CoreVIEW-Auth.png";
+import coreRISKLogo from "./assets/CoreRISK-Auth.png";
 
 /** Registry of every app in the CoreMS suite. Accents keep >= 4.5:1 contrast with white text. */
 export const COREMS_APPS: Record<AppKey, CoreMSAppMeta> = {
@@ -27,6 +38,7 @@ export const COREMS_APPS: Record<AppKey, CoreMSAppMeta> = {
     title: "Security Manager",
     tagline: "Security operations. Controlled and connected.",
     accent: "#EF4444",
+    logo: coreSHLDLogo,
   },
   loading: {
     key: "loading",
@@ -42,6 +54,7 @@ export const COREMS_APPS: Record<AppKey, CoreMSAppMeta> = {
     title: "Mine Production",
     tagline: "Shift production, targets and variances in one operational view.",
     accent: "#38BDF8",
+    logo: coreMINELogo,
   },
   process: {
     key: "process",
@@ -49,6 +62,7 @@ export const COREMS_APPS: Record<AppKey, CoreMSAppMeta> = {
     title: "Processing & Production",
     tagline: "Throughput, recovery and plant uptime at a glance.",
     accent: "#3B82F6",
+    logo: corePRCSLogo,
   },
   mech: {
     key: "mech",
@@ -56,6 +70,7 @@ export const COREMS_APPS: Record<AppKey, CoreMSAppMeta> = {
     title: "Maintenance and Fleetcare",
     tagline: "Breakdowns, services and equipment availability under control.",
     accent: "#EAB308",
+    logo: coreMECHLogo,
   },
   safety: {
     key: "safety",
@@ -63,6 +78,7 @@ export const COREMS_APPS: Record<AppKey, CoreMSAppMeta> = {
     title: "Safety & Compliance",
     tagline: "Incidents, inspections and corrective actions — nothing missed.",
     accent: "#EF4444",
+    logo: coreRISKLogo,
   },
   qc: {
     key: "qc",
@@ -70,6 +86,7 @@ export const COREMS_APPS: Record<AppKey, CoreMSAppMeta> = {
     title: "Quality Control",
     tagline: "Sampling, assays and grade control with full traceability.",
     accent: "#22C55E",
+    logo: coreLABSLogo,
   },
   stock: {
     key: "stock",
@@ -77,6 +94,7 @@ export const COREMS_APPS: Record<AppKey, CoreMSAppMeta> = {
     title: "Stores & Inventory",
     tagline: "Stockpile volumes, movements and inventory reconciled daily.",
     accent: "#C47A3A",
+    logo: coreSTORLogo,
   },
   port: {
     key: "port",
@@ -84,6 +102,7 @@ export const COREMS_APPS: Record<AppKey, CoreMSAppMeta> = {
     title: "Destination Receiving",
     tagline: "Vessel loading, rail arrivals and port stock in sync.",
     accent: "#22D3EE",
+    logo: corePORTLogo,
   },
   dashboard: {
     key: "dashboard",
@@ -91,6 +110,7 @@ export const COREMS_APPS: Record<AppKey, CoreMSAppMeta> = {
     title: "Executive Dashboard",
     tagline: "Suite-wide KPIs for every site, in real time.",
     accent: "#A855F7",
+    logo: coreVIEWLogo,
   },
 };
 
