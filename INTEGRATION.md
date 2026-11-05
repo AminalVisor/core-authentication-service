@@ -8,15 +8,16 @@ Every app on the shared backend needs these Postgres RPCs. They run on every log
 
 | RPC | Returns | Purpose |
 | --- | --- | --- |
-| `is_company_active(_user_id uuid)` | `boolean` | Mandatory company gate; missing/inactive companies block all users, including Super Admins |
-| `is_user_active(_user_id uuid)` | `boolean` | Inactive accounts are blocked and signed out |
-| `is_super_admin(_user_id uuid)` | `boolean` | Super Admins bypass app entitlements |
+| `is_user_account_active(_user_id uuid)` | `boolean` | Individual account status; inactive accounts are blocked, including Super Admins |
+| `is_company_active(_user_id uuid)` | `boolean` | Company gate for non-Super Admins; missing/inactive companies do not block Super Admins |
+| `is_user_active(_user_id uuid)` | `boolean` | Combined account/company gate for data policies; Super Admins bypass company suspension but not account deactivation |
+| `is_super_admin(_user_id uuid)` | `boolean` | Super Admins bypass company and app entitlement checks |
 | `can_user_access_app(_app text)` | `boolean` | Is the user assigned this app key |
 | `get_user_roles(_user_id uuid)` | `text[]` | Roles (stored in a separate `user_roles` table, never on `profiles`) |
 
-Order: company active → user active → super admin → profile/roles → app entitlement (unless Super Admin). Company verification errors fail closed. Company suspension returns `company_inactive`, independently of individual user activation.
+Order: individual account active → Super Admin RPC/profile roles → company active and app entitlement for non-Super Admins. Company verification errors fail closed for non-Super Admins. Company suspension does not modify individual account activation and does not block Super Admins.
 
-Sessions are rechecked on token refresh, returning to the foreground and every 60 seconds while visible. This is UI revocation, not the security boundary: database policies and privileged endpoints must reject suspended-company data access on every request.
+Sessions are rechecked on token refresh, returning to the foreground and every 60 seconds while visible. This is UI revocation, not the security boundary: database policies and privileged endpoints must reject suspended-company data access for regular users on every request, while preserving Super Admin access.
 
 ### Company suspension rollout (required before updating consumer apps)
 
@@ -24,9 +25,9 @@ The prepared SQL is in [database/company-suspension.sql](./database/company-susp
 
 1. Review the existing `company`, `profiles`, `clients`, `user_clients`, `client_apps`, `is_super_admin` and RLS definitions. The snapshot has `profiles.company_id → company.id` but no company active field.
 2. Apply the reviewed SQL to add `company.is_active` (existing companies default active), the dedicated company RPC, protected status updates, and company-aware legacy account/app RPCs. No individual `profiles.is_active` flags are changed. Only suite Super Admins or privileged server maintenance may change company status; existing company UPDATE RLS still applies.
-3. Add restrictive company/account-active policies alongside existing ownership/tenant policies on **every** tenant-data table and relevant storage policies. Audit SECURITY DEFINER RPCs and privileged server endpoints separately. The SQL deliberately leaves this inventory-specific step for the connected project rather than guessing unseen policies. Without it, already-issued sessions may still access data directly.
-4. Users without a profile/company assignment are denied, including Super Admins. Assign the suite administrators to an active operator company so they can reactivate suspended customers; do not assign them to the suspended company.
-5. Before releasing, test suspension and reactivation using real accounts and an already-issued session, including direct data requests. New libraries block sign-in if the new RPC is absent, so deploy the shared-backend changes **first**.
+3. Add restrictive account/company-active policies alongside existing ownership/tenant policies on **every** tenant-data table and relevant storage policies. Use `is_user_active(auth.uid())` for the combined gate: inactive users are blocked, regular users at suspended companies are blocked, and active Super Admins bypass the company gate. Audit SECURITY DEFINER RPCs and privileged server endpoints separately. The SQL deliberately leaves this inventory-specific step for the connected project rather than guessing unseen policies.
+4. All users need an active profile. Non-Super Admins also need an active company assignment. Super Admins can sign in without an active company assignment so they can administer companies and sites.
+5. Before releasing, test suspension and reactivation using regular and Super Admin accounts and an already-issued session, including direct data requests. New libraries require `is_user_account_active`; deploy the shared-backend changes **first**.
 6. Release a new library version/tag and upgrade each consumer. To suspend/reactivate, change the company's `is_active` only. Individually inactive or unentitled users remain blocked after reactivation.
 
 Invite/recovery sessions remain available for password changes but never grant protected-app access on password-setup pages. A successful password change signs the user out.
@@ -82,7 +83,7 @@ import { RequireRole } from "@corems/auth";
 ```
 Super Admins pass by default; set `allowSuperAdmin={false}` to exclude them.
 
-6. Test: valid login, inactive user, no app entitlement, Super Admin entitlement bypass, inactive company (including a Super Admin), company-check failure, suspension during an existing session, reactivation, invite link, reset link and direct data access while suspended.
+6. Test: valid login, inactive user, no app entitlement, Super Admin company/entitlement bypass, inactive company for regular users, company-check failure, suspension during an existing regular-user session, continued Super Admin access, reactivation, invite link, reset link and direct data access while suspended.
 
 ### Migration checklist
 - [ ] Package installed at the latest tag

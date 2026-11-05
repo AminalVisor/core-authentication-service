@@ -43,8 +43,13 @@ export function createMockSupabase(opts: {
     const argStr = JSON.stringify(args ?? {});
     switch (fn) {
       case "is_user_active": {
-        const v = scenario !== "inactive";
+        const v = scenario !== "inactive" && (scenario === "superadmin" || scenario !== "company_inactive");
         log(`rpc is_user_active(${argStr})`, String(v), v ? "ok" : "error");
+        return { data: v, error: null };
+      }
+      case "is_user_account_active": {
+        const v = scenario !== "inactive";
+        log(`rpc is_user_account_active(${argStr})`, String(v), v ? "ok" : "error");
         return { data: v, error: null };
       }
       case "is_company_active": {

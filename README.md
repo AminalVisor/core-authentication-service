@@ -22,7 +22,7 @@ import { CoreMSAuthProvider, RequireAuth, SetPasswordScreen } from "@corems/auth
 <SetPasswordScreen onBackToSignIn={() => navigate("/")} />
 ```
 
-Gates on every login and session restore: `is_company_active(_user_id)` → `is_user_active(_user_id)` → `is_super_admin(_user_id)` → profile/roles → `can_user_access_app(_app)` (entitlement bypass for Super Admins only). Suspension never modifies individual user activation. Sessions revalidate on refresh, foreground return and every visible minute. Password links retain password-change sessions without granting protected-app access.
+Gates on every login and session restore: `is_user_account_active(_user_id)` always applies; Super Admin status is then resolved from the RPC/profile roles. Super Admins bypass company suspension and app entitlements. Other users must pass `is_company_active(_user_id)` and `can_user_access_app(_app)`. Sessions revalidate on refresh, foreground return and every visible minute. Password links retain password-change sessions without granting protected-app access.
 
 **Deploy the shared-backend changes before upgrading consumers.** [database/company-suspension.sql](./database/company-suspension.sql) is prepared, not applied; the [manual](./INTEGRATION.md#company-suspension-rollout-required-before-updating-consumer-apps) includes required per-request data-policy enforcement and real-account verification.
 

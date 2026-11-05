@@ -31,7 +31,7 @@ async function setup(scenario: Scenario = "success") {
 }
 
 describe("Company authorization", () => {
-  it.each(["is_company_active", "is_user_active", "is_super_admin", "get_user_roles", "can_user_access_app"])("keeps a verified session during a temporary %s connection failure and retries", async (fn) => {
+  it.each(["is_company_active", "is_user_account_active", "is_super_admin", "get_user_roles", "can_user_access_app"])("keeps a verified session during a temporary %s connection failure and retries", async (fn) => {
     const s = await setup();
     await s.login();
     const user = s.current().user;
@@ -67,7 +67,7 @@ describe("Company authorization", () => {
     await waitFor(() => expect(s.signOut).toHaveBeenCalled());
     expect(s.current().isAuthenticated).toBe(false);
   });
-  it.each([ ["is_user_active", "inactive"], ["can_user_access_app", "entitlement_denied"] ])("still revokes verified access when %s explicitly denies access", async (fn, code) => {
+  it.each([ ["is_user_account_active", "inactive"], ["can_user_access_app", "entitlement_denied"] ])("still revokes verified access when %s explicitly denies access", async (fn, code) => {
     const s = await setup();
     await s.login();
     s.rpc.mockImplementation((name, args) => name === fn
@@ -116,7 +116,7 @@ describe("Company authorization", () => {
     const s = await setup();
     expect(await s.login()).toEqual({ success: true });
     expect(s.current().isAuthenticated).toBe(true);
-    expect(s.rpc).toHaveBeenCalledWith("is_company_active", { _user_id: "00000000-0000-4000-8000-000000000001" });
+    expect(s.rpc).toHaveBeenCalledWith("is_user_account_active", { _user_id: "00000000-0000-4000-8000-000000000001" });
   });
   it("blocks an active user at an inactive company without modifying the user record", async () => {
     const s = await setup("company_inactive");
@@ -139,13 +139,16 @@ describe("Company authorization", () => {
       : original(fn, args));
     expect(await s.login()).toMatchObject({ success: false, code: "network" });
   });
-  it("does not let Super Admin roles bypass company suspension", async () => {
+  it("lets Super Admin bypass company suspension and app entitlement", async () => {
     const s = await setup("superadmin");
     const original = s.originalRpc;
     s.rpc.mockImplementation((fn, args) => fn === "is_company_active"
       ? Promise.resolve({ data: false, error: null }) as unknown as ReturnType<typeof original>
       : original(fn, args));
-    expect(await s.login()).toMatchObject({ success: false, code: "company_inactive" });
+    expect(await s.login()).toEqual({ success: true });
+    expect(s.current().isAuthenticated).toBe(true);
+    expect(s.rpc).not.toHaveBeenCalledWith("is_company_active", expect.anything());
+    expect(s.rpc).not.toHaveBeenCalledWith("can_user_access_app", expect.anything());
   });
   it("an active company does not override individual inactivity", async () => {
     const s = await setup("inactive");

@@ -131,24 +131,11 @@ export function CoreMSAuthProvider({
     setErrorCode(code);
   }, []);
 
-  /** Company suspension is independent of user activation and cannot be bypassed by roles. */
+  /** Super Admins bypass company status and app entitlements, but not individual account deactivation. */
   const runGates = useCallback(
     async (s: Session): Promise<CoreMSUser> => {
       const uid = s.user.id;
-      const company = await supabase.rpc("is_company_active", { _user_id: uid });
-      if (company.error || (company.data !== true && company.data !== false))
-        throw new GateError(
-          "network",
-          "We couldn't verify your company's status. Please try again.",
-          isConnectionError(company.error),
-        );
-      if (company.data !== true)
-        throw new GateError(
-          "company_inactive",
-          "Your company's access has been temporarily suspended. Please contact your company administrator.",
-        );
-
-      const active = await supabase.rpc("is_user_active", { _user_id: uid });
+      const active = await supabase.rpc("is_user_account_active", { _user_id: uid });
       if (active.error)
         throw new GateError(
           "network",
@@ -175,15 +162,30 @@ export function CoreMSAuthProvider({
       const roles = Array.from(new Set([role, ...(prof.roles ?? [])])).filter(Boolean);
       if (roles.some((r) => superAdminRoles.includes(r))) isSuperAdmin = true;
 
-      if (!isSuperAdmin && !isPasswordSetupFlow()) {
-        const access = await supabase.rpc("can_user_access_app", { _app: appKey });
-        if (isConnectionError(access.error))
-          throw new GateError("network", "We couldn't verify your app access. Please try again.", true);
-        if (access.error || access.data !== true)
+      if (!isSuperAdmin) {
+        const company = await supabase.rpc("is_company_active", { _user_id: uid });
+        if (company.error || (company.data !== true && company.data !== false))
           throw new GateError(
-            "entitlement_denied",
-            `Your organisation doesn't have access to ${branding.appName}. Please contact your administrator.`,
+            "network",
+            "We couldn't verify your company's status. Please try again.",
+            isConnectionError(company.error),
           );
+        if (company.data !== true)
+          throw new GateError(
+            "company_inactive",
+            "Your company's access has been temporarily suspended. Please contact your company administrator.",
+          );
+
+        if (!isPasswordSetupFlow()) {
+          const access = await supabase.rpc("can_user_access_app", { _app: appKey });
+          if (isConnectionError(access.error))
+            throw new GateError("network", "We couldn't verify your app access. Please try again.", true);
+          if (access.error || access.data !== true)
+            throw new GateError(
+              "entitlement_denied",
+              `Your organisation doesn't have access to ${branding.appName}. Please contact your administrator.`,
+            );
+        }
       }
 
       return {

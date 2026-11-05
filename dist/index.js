@@ -201,35 +201,37 @@ function A({ supabaseClient: e, appKey: n, branding: i, appVersion: c, swVersion
 	let [v, y] = s(null), [b, x] = s(null), [S, A] = s(!0), [j, M] = s(null), [N, P] = s(null), F = o(null), I = o(!0), L = o(null), R = o(null), z = a(() => k(n, i), [n, i]), B = t((e, t) => {
 		I.current && (M(t), P(e));
 	}, []), V = t(async (t) => {
-		let r = t.user.id, i = await e.rpc("is_company_active", { _user_id: r });
-		if (i.error || i.data !== !0 && i.data !== !1) throw new D("network", "We couldn't verify your company's status. Please try again.", O(i.error));
-		if (i.data !== !0) throw new D("company_inactive", "Your company's access has been temporarily suspended. Please contact your company administrator.");
-		let a = await e.rpc("is_user_active", { _user_id: r });
-		if (a.error) throw new D("network", "We couldn't verify your account. Please try again.", O(a.error));
-		if (a.data !== !0) throw new D("inactive", "Your account has been deactivated. Please contact your administrator.");
-		let o = await e.rpc("is_super_admin", { _user_id: r });
-		if (O(o.error)) throw new D("network", "We couldn't verify your account. Please try again.", !0);
-		let s = o.data === !0, c;
+		let r = t.user.id, i = await e.rpc("is_user_account_active", { _user_id: r });
+		if (i.error) throw new D("network", "We couldn't verify your account. Please try again.", O(i.error));
+		if (i.data !== !0) throw new D("inactive", "Your account has been deactivated. Please contact your administrator.");
+		let a = await e.rpc("is_super_admin", { _user_id: r });
+		if (O(a.error)) throw new D("network", "We couldn't verify your account. Please try again.", !0);
+		let o = a.data === !0, s;
 		try {
-			c = await p(e, r);
+			s = await p(e, r);
 		} catch (e) {
 			throw O(e) ? new D("network", "We couldn't load your profile. Please try again.", !0) : new D("profile_error", "We couldn't load your profile. Please contact support.");
 		}
-		let l = c.role ?? "User", u = Array.from(/* @__PURE__ */ new Set([l, ...c.roles ?? []])).filter(Boolean);
-		if (u.some((e) => m.includes(e)) && (s = !0), !s && !E()) {
-			let t = await e.rpc("can_user_access_app", { _app: n });
-			if (O(t.error)) throw new D("network", "We couldn't verify your app access. Please try again.", !0);
-			if (t.error || t.data !== !0) throw new D("entitlement_denied", `Your organisation doesn't have access to ${z.appName}. Please contact your administrator.`);
+		let c = s.role ?? "User", l = Array.from(/* @__PURE__ */ new Set([c, ...s.roles ?? []])).filter(Boolean);
+		if (l.some((e) => m.includes(e)) && (o = !0), !o) {
+			let t = await e.rpc("is_company_active", { _user_id: r });
+			if (t.error || t.data !== !0 && t.data !== !1) throw new D("network", "We couldn't verify your company's status. Please try again.", O(t.error));
+			if (t.data !== !0) throw new D("company_inactive", "Your company's access has been temporarily suspended. Please contact your company administrator.");
+			if (!E()) {
+				let t = await e.rpc("can_user_access_app", { _app: n });
+				if (O(t.error)) throw new D("network", "We couldn't verify your app access. Please try again.", !0);
+				if (t.error || t.data !== !0) throw new D("entitlement_denied", `Your organisation doesn't have access to ${z.appName}. Please contact your administrator.`);
+			}
 		}
 		return {
 			id: r,
 			email: t.user.email ?? null,
-			fullName: c.fullName,
-			username: c.username ?? t.user.email?.split("@")[0] ?? "User",
-			role: l,
-			roles: u,
-			isSuperAdmin: s,
-			profile: c.profile ?? null
+			fullName: s.fullName,
+			username: s.username ?? t.user.email?.split("@")[0] ?? "User",
+			role: c,
+			roles: l,
+			isSuperAdmin: o,
+			profile: s.profile ?? null
 		};
 	}, [
 		e,

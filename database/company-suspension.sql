@@ -39,12 +39,25 @@ DROP TRIGGER IF EXISTS trg_guard_company_is_active ON public.company;
 CREATE TRIGGER trg_guard_company_is_active BEFORE INSERT OR UPDATE ON public.company
 FOR EACH ROW EXECUTE FUNCTION public.guard_company_is_active();
 
--- Older consumer libraries already call this: company suspension also blocks them at login.
-CREATE OR REPLACE FUNCTION public.is_user_active(_user_id uuid DEFAULT NULL)
+-- Account activation is independent of company status so Super Admins can be
+-- checked for deactivation without requiring an active company assignment.
+CREATE OR REPLACE FUNCTION public.is_user_account_active(_user_id uuid DEFAULT NULL)
 RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = '' AS $$
   SELECT COALESCE((SELECT p.is_active FROM public.profiles p
-    WHERE p.id = COALESCE(_user_id, auth.uid())), false)
-    AND public.is_company_active(_user_id)
+    WHERE p.id = COALESCE(_user_id, auth.uid())
+      AND (COALESCE(_user_id, auth.uid()) = auth.uid()
+           OR public.is_super_admin(auth.uid()))), false)
+$$;
+REVOKE ALL ON FUNCTION public.is_user_account_active(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.is_user_account_active(uuid) TO authenticated, service_role;
+
+-- This combined gate remains useful for restrictive data policies. Super Admins
+-- bypass company suspension, while individually inactive accounts remain blocked.
+CREATE OR REPLACE FUNCTION public.is_user_active(_user_id uuid DEFAULT NULL)
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = '' AS $$
+  SELECT public.is_user_account_active(_user_id)
+    AND (public.is_super_admin(COALESCE(_user_id, auth.uid()))
+         OR public.is_company_active(_user_id))
 $$;
 REVOKE ALL ON FUNCTION public.is_user_active(uuid) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.is_user_active(uuid) TO authenticated, service_role;
@@ -57,8 +70,9 @@ DECLARE
 BEGIN
   IF _caller IS NULL OR _target IS NULL THEN RETURN false; END IF;
   IF _target <> _caller AND NOT COALESCE(public.is_super_admin(_caller), false) THEN RETURN false; END IF;
-  IF NOT public.is_user_active(_target) THEN RETURN false; END IF;
+  IF NOT public.is_user_account_active(_target) THEN RETURN false; END IF;
   IF public.is_super_admin(_target) THEN RETURN true; END IF;
+  IF NOT public.is_company_active(_target) THEN RETURN false; END IF;
   RETURN EXISTS (
     SELECT 1 FROM public.profiles p
     JOIN public.clients c ON c.company_id = p.company_id
