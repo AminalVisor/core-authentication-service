@@ -88,19 +88,32 @@ function isConnectionError(error: unknown): boolean {
   );
 }
 
-export function resolveBranding(appKey: AppKey, overrides?: CoreMSBranding): ResolvedBranding {
-  const meta = getAppMeta(appKey);
-  return {
-    appKey,
-    appName: overrides?.appName ?? meta.name,
-    title: overrides?.title ?? meta.title,
-    subtitle: overrides?.subtitle ?? "Sign in to your workspace.",
-    tagline: overrides?.tagline ?? meta.tagline,
-    accent: overrides?.accent ?? meta.accent,
-    logo: overrides?.logo ?? meta.logo,
-    hideSuiteLogo: overrides?.hideSuiteLogo ?? false,
+const [dynamicLogo, setDynamicLogo] = useState<string | undefined>(undefined);
+
+useEffect(() => {
+  // If the caller provided a logo override, don't load anything from the library
+  if (brandingOverrides?.logo) return;
+
+  let cancelled = false;
+  loadAppLogo(appKey).then((logoUrl) => {
+    if (!cancelled && logoUrl) {
+      setDynamicLogo(logoUrl);
+    }
+  });
+
+  return () => {
+    cancelled = true;
   };
-}
+}, [appKey, brandingOverrides?.logo]);
+
+const branding: ResolvedBranding = {
+  appName: brandingOverrides?.appName ?? meta.name,
+  appTitle: brandingOverrides?.appTitle ?? meta.title,
+  tagline: brandingOverrides?.tagline ?? meta.tagline,
+  accent: brandingOverrides?.accent ?? meta.accent,
+  logo: brandingOverrides?.logo ?? dynamicLogo,
+  hideSuiteLogo: brandingOverrides?.hideSuiteLogo ?? false,
+};
 
 export function CoreMSAuthProvider({
   supabaseClient: supabase,
