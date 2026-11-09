@@ -16,6 +16,13 @@ export const COREMS_APPS: Record<AppKey, CoreMSAppMeta> = {
     tagline: "Track every litre dispensed, reconciled and billed across your fleet.",
     accent: "#F59E0B",
   },
+  fill: {
+    key: "fill",
+    name: "CoreFILL",
+    title: "Personnel Fuel Manager",
+    tagline: "Track every litre used by Personnel",
+    accent: "#84CC16",
+  },
   shld: {
     key: "shld",
     name: "CoreSHLD",

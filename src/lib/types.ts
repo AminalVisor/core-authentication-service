@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 export type AppKey =
   | "ctrl"
   | "fuel"
+  | "fill"
   | "shld"
   | "loading"
   | "production"

@@ -6,14 +6,14 @@ How to add the shared CoreMS sign-in to a new app, migrate an existing app, and 
 
 Every app on the shared backend needs these Postgres RPCs. They run on every login and session restore:
 
-| RPC | Returns | Purpose |
-| --- | --- | --- |
-| `is_user_account_active(_user_id uuid)` | `boolean` | Individual account status; inactive accounts are blocked, including Super Admins |
-| `is_company_active(_user_id uuid)` | `boolean` | Company gate for non-Super Admins; missing/inactive companies do not block Super Admins |
-| `is_user_active(_user_id uuid)` | `boolean` | Combined account/company gate for data policies; Super Admins bypass company suspension but not account deactivation |
-| `is_super_admin(_user_id uuid)` | `boolean` | Super Admins bypass company and app entitlement checks |
-| `can_user_access_app(_app text)` | `boolean` | Is the user assigned this app key |
-| `get_user_roles(_user_id uuid)` | `text[]` | Roles (stored in a separate `user_roles` table, never on `profiles`) |
+| RPC                                     | Returns   | Purpose                                                                                                              |
+| --------------------------------------- | --------- | -------------------------------------------------------------------------------------------------------------------- |
+| `is_user_account_active(_user_id uuid)` | `boolean` | Individual account status; inactive accounts are blocked, including Super Admins                                     |
+| `is_company_active(_user_id uuid)`      | `boolean` | Company gate for non-Super Admins; missing/inactive companies do not block Super Admins                              |
+| `is_user_active(_user_id uuid)`         | `boolean` | Combined account/company gate for data policies; Super Admins bypass company suspension but not account deactivation |
+| `is_super_admin(_user_id uuid)`         | `boolean` | Super Admins bypass company and app entitlement checks                                                               |
+| `can_user_access_app(_app text)`        | `boolean` | Is the user assigned this app key                                                                                    |
+| `get_user_roles(_user_id uuid)`         | `text[]`  | Roles (stored in a separate `user_roles` table, never on `profiles`)                                                 |
 
 Order: individual account active → Super Admin RPC/profile roles → company active and app entitlement for non-Super Admins. Company verification errors fail closed for non-Super Admins. Company suspension does not modify individual account activation and does not block Super Admins.
 
@@ -35,13 +35,16 @@ Invite/recovery sessions remain available for password changes but never grant p
 ## 2. New app setup
 
 ### 2.1 Install
+
 ```bash
 bun add github:AminalVisor/core-authentication-service#v0.1.0
 bun add @supabase/supabase-js react react-dom   # peers: React >=18, supabase-js ^2
 ```
+
 No build step and no CSS import needed — `dist/` is prebuilt and styles self-inject.
 
 ### 2.2 Wrap the app
+
 ```tsx
 import { CoreMSAuthProvider, RequireAuth } from "@corems/auth";
 import { supabase } from "@/integrations/supabase/client";
@@ -52,15 +55,19 @@ import { supabase } from "@/integrations/supabase/client";
 ```
 
 ### 2.3 Set / reset password route
+
 Create `/set-password` and `/reset-password` (whatever your invite and reset emails redirect to):
+
 ```tsx
 import { SetPasswordScreen } from "@corems/auth";
 
 <SetPasswordScreen onBackToSignIn={() => navigate("/")} />
 ```
+
 It detects invite vs reset links, exchanges codes / verifies OTPs, checks strength, saves, then signs out.
 
 ### 2.4 Supabase Auth settings
+
 Add the app's URLs (preview + production) to the Supabase Auth redirect allow-list, and point invite/recovery emails at the route above.
 
 ## 3. Migrating an existing app
@@ -70,22 +77,25 @@ Add the app's URLs (preview + production) to the Supabase Auth redirect allow-li
 3. Replace the provider in the app root with `CoreMSAuthProvider` (2.2).
 4. Replace hook imports:
 
-| Before | After |
-| --- | --- |
-| `import { useAuth } from "@/contexts/AuthContext"` | `import { useCoreMSAuth } from "@corems/auth"` |
-| `const { user, signOut } = useAuth()` | `const { user, logout } = useCoreMSAuth()` |
-| `user.role` | `user?.role` / `user?.roles` / `user?.isSuperAdmin` |
+| Before                                             | After                                               |
+| -------------------------------------------------- | --------------------------------------------------- |
+| `import { useAuth } from "@/contexts/AuthContext"` | `import { useCoreMSAuth } from "@corems/auth"`      |
+| `const { user, signOut } = useAuth()`              | `const { user, logout } = useCoreMSAuth()`          |
+| `user.role`                                        | `user?.role` / `user?.roles` / `user?.isSuperAdmin` |
 
 5. Replace custom route guards:
+
 ```tsx
 import { RequireRole } from "@corems/auth";
 <RequireRole roles={["Admin", "Manager"]}><AdminSettings /></RequireRole>
 ```
+
 Super Admins pass by default; set `allowSuperAdmin={false}` to exclude them.
 
 6. Test: valid login, inactive user, no app entitlement, Super Admin company/entitlement bypass, inactive company for regular users, company-check failure, suspension during an existing regular-user session, continued Super Admin access, reactivation, invite link, reset link and direct data access while suspended.
 
 ### Migration checklist
+
 - [ ] Package installed at the latest tag
 - [ ] Old auth context / login / set-password files removed
 - [ ] All `useAuth` imports replaced
@@ -98,28 +108,32 @@ Super Admins pass by default; set `allowSuperAdmin={false}` to exclude them.
 ## 4. Reference
 
 ### App keys
-| `appKey` | Name | Title |
-| --- | --- | --- |
-| `ctrl` | CoreCTRL | CoreMS Control Centre |
-| `fuel` | CoreFUEL | Fuel Manager |
-| `loading` | CoreLOAD | Load Manager |
-| `production` | CoreMINE | Mine Production |
-| `process` | CorePRCS | Processing & Production |
-| `mech` | CoreMECH | Maintenance and Fleetcare |
-| `safety` | CoreRISK | Safety & Compliance |
-| `qc` | CoreLABS | Quality Control |
-| `stock` | CoreSTOR | Stores & Inventory |
-| `port` | CorePORT | Destination Receiving |
-| `dashboard` | CoreVIEW | Executive Dashboard |
+
+| `appKey`     | Name     | Title                     |
+| ------------ | -------- | ------------------------- |
+| `ctrl`       | CoreCTRL | CoreMS Control Centre     |
+| `fuel`       | CoreFUEL | Fuel Manager              |
+| `fill`       | CoreFILL | Personnel Fuel Manager    |
+| `loading`    | CoreLOAD | Load Manager              |
+| `production` | CoreMINE | Mine Production           |
+| `process`    | CorePRCS | Processing & Production   |
+| `mech`       | CoreMECH | Maintenance and Fleetcare |
+| `safety`     | CoreRISK | Safety & Compliance       |
+| `qc`         | CoreLABS | Quality Control           |
+| `stock`      | CoreSTOR | Stores & Inventory        |
+| `port`       | CorePORT | Destination Receiving     |
+| `dashboard`  | CoreVIEW | Executive Dashboard       |
 
 Adding a new app: add the key to `AppKey` in `src/lib/types.ts` and an entry in `src/lib/apps.ts`, then release (section 5).
 
 ### Branding overrides
+
 ```tsx
 branding={{ appName, title, subtitle, tagline, accent: "#B45309", logo: "/logo.svg", hideSuiteLogo: false }}
 ```
 
 ### Custom profile loader
+
 ```tsx
 loadProfile={async (client, userId) => {
   const { data } = await client.from("profiles").select("display_name, site_id").eq("id", userId).single();
@@ -127,9 +141,11 @@ loadProfile={async (client, userId) => {
   return { username: data?.display_name, roles: roles ?? [], role: roles?.[0], profile: data };
 }}
 ```
+
 Access extra fields via `useCoreMSAuth().user?.profile`.
 
 ### Exports
+
 `CoreMSAuthProvider`, `useCoreMSAuth`, `LoginScreen`, `SetPasswordScreen`, `RequireAuth`, `RequireRole` (= `RoleBasedRoute`), `AuthLoading`, `APP_REGISTRY` (= `COREMS_APPS`), `APP_KEYS`, `getAppMeta`, `AppMark`, `CoreMSStyles`, and types `AppKey`, `AppMeta`, `CoreMSUser`, `CoreMSProfile`, `AuthErrorCode`, `AuthResult`, `CoreMSBranding`.
 
 ## 5. Releasing an update
@@ -150,7 +166,9 @@ Access extra fields via `useCoreMSAuth().user?.profile`.
 Versioning: patch (`0.1.x`) for fixes, minor (`0.x.0`) for new features, major for breaking changes. Upgrade apps one at a time.
 
 ## Version telemetry (v0.2.0+)
+
 After each successful sign-in or session restore (once per user per page load), the provider calls `record_app_telemetry` with the app key, `COREMS_AUTH_VERSION`, service-worker state, browser info and an anonymous device id (`localStorage.corems_device_id`). Failures are ignored and never affect sign-in. Pass optional details:
+
 ```tsx
 <CoreMSAuthProvider supabaseClient={supabase} appKey="fuel"
   appVersion={import.meta.env.VITE_APP_VERSION} swVersion="sw-2026-10" offlineSchemaVersion={3}>
