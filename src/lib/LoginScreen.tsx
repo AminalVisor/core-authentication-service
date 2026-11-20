@@ -125,7 +125,7 @@ export function LoginScreen({ onSuccess, resetRedirectTo, contained, hideHero, h
                     onChange={(e) => { setPassword(e.target.value); if (error) clearError(); }}
                   />
                   <button
-                    type="button" className="cms-reveal" onClick={() => setReveal((v) => !v)}
+                    type="button" className="cms-reveal" onClick={() => setReveal((v) => !v) z-index: 2}
                     aria-label={reveal ? "Hide password" : "Show password"} aria-pressed={reveal} aria-controls={`${ids}-pw`}
                   >
                     {reveal ? <EyeOffIcon /> : <EyeIcon />}

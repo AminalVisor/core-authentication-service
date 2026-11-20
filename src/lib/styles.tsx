@@ -60,6 +60,12 @@ export const COREMS_AUTH_CSS = `
 .cms-footer{margin-top:22px;padding-top:18px;border-top:1px solid var(--cms-border);font-size:12px;color:var(--cms-muted);text-align:center}
 .cms-spin{animation:cms-spin .8s linear infinite}@keyframes cms-spin{to{transform:rotate(360deg)}}
 .cms-center{display:flex;flex-direction:column;align-items:center;gap:12px;color:var(--cms-muted);font-size:14px}
+.cms-input::-ms-reveal,
+.cms-input::-ms-clear {
+  display: none;
+  width: 0;
+  height: 0;
+}
 .cms-sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}
 @media (prefers-reduced-motion:reduce){.cms-spin{animation-duration:2s}.cms-btn,.cms-input{transition:none}}
 `;
