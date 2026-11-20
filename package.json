@@ -1,6 +1,6 @@
 {
   "name": "@corems/auth",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "description": "Shared authentication provider, screens and route guards for the CoreMS PWA suite.",
   "private": true,
   "sideEffects": false,
@@ -15,9 +15,7 @@
       "default": "./dist/index.js"
     }
   },
-  "files": [
-    "dist"
-  ],
+  "files": ["dist"],
   "peerDependencies": {
     "react": ">=18.0.0",
     "react-dom": ">=18.0.0",
