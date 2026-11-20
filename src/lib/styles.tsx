@@ -39,7 +39,7 @@ export const COREMS_AUTH_CSS = `
 .cms-input:focus-visible{border-color:var(--cms-accent-text);box-shadow:0 0 0 3px color-mix(in srgb,var(--cms-accent) 45%,transparent)}
 .cms-input:disabled{opacity:.6}
 .cms-input.cms-has-toggle{padding-right:52px}
-.cms-reveal{position:absolute;top:0;right:0;width:48px;height:48px;display:grid;place-items:center;background:none;border:0;border-radius:10px;color:var(--cms-muted);cursor:pointer}
+.cms-reveal{position:absolute;z-index:2;top:0;right:0;width:48px;height:48px;display:grid;place-items:center;background:none;border:0;border-radius:10px;color:var(--cms-muted);cursor:pointer}
 .cms-reveal:hover{color:var(--cms-text)}
 .cms-reveal:focus-visible,.cms-btn:focus-visible,.cms-link:focus-visible{outline:2px solid var(--cms-accent-text);outline-offset:2px}
 .cms-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:48px;padding:0 18px;font:inherit;font-size:16px;font-weight:700;color:#fff;background:var(--cms-accent);border:0;border-radius:10px;cursor:pointer;transition:filter .15s,transform .05s}

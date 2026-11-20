@@ -15,4 +15,4 @@ export interface SetPasswordScreenProps {
     appKey?: AppKey;
 }
 export declare function strength(pw: string): number;
-export declare function SetPasswordScreen({ mode: modeProp, onComplete, onBackToSignIn, minLength, contained, supabaseClient, branding: brandingProp, appKey }: SetPasswordScreenProps): import("react").JSX.Element;
+export declare function SetPasswordScreen({ mode: modeProp, onComplete, onBackToSignIn, minLength, contained, supabaseClient, branding: brandingProp, appKey, }: SetPasswordScreenProps): import("react").JSX.Element;

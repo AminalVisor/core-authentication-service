@@ -184,10 +184,10 @@ export function SetPasswordScreen({
                     type="button"
                     className="cms-reveal"
                     onClick={() => setReveal((v) => !v)}
+                    onMouseDown={(e) => e.preventDefault()}
                     aria-label={reveal ? "Hide passwords" : "Show passwords"}
                     aria-pressed={reveal}
                   >
-                    onMouseDown={(e) => e.preventDefault()}
                     {reveal ? <EyeOffIcon /> : <EyeIcon />}
                   </button>
                 </div>
